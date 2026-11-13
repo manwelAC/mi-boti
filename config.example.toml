@@ -1,0 +1,21 @@
+# Copy to config.toml for local operation. Never put credentials here.
+# Unspecified documented settings use their validated defaults.
+[runtime]
+log_level = "INFO"
+minimum_disk_free_mib = 500
+
+[jobs]
+max_concurrency = 2
+ai_concurrency = 1
+
+[research]
+# Set a descriptive operator contact before any future website requests.
+user_agent = ""
+playwright_enabled = false
+trust_env_proxy = false
+
+[mcp]
+enabled = false
+
+# Provider/source activation is unavailable in Phase 1. No jobs, network
+# requests, CLI model tasks, or Discord connections are launched by this file.

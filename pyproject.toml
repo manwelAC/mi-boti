@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools==84.2.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mi-boti"
+version = "0.1.0"
+description = "Local Discord-native lead intelligence: application foundation"
+readme = "README.md"
+requires-python = ">=3.11,<3.15"
+dependencies = [
+  "discord.py==2.7.1",
+  "httpx==0.28.1",
+  "beautifulsoup4==4.15.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==9.2.0"]
+
+[project.scripts]
+mi-boti = "mi_boti.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+mi_boti = ["migrations/*.sql", "migrations/manifest.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
