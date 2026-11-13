@@ -4,6 +4,12 @@ Versions use MAJOR.MINOR.PATCH with annotated v tags. Releases before 1.0 are de
 
 ## Unreleased
 
+### Phase 3 core
+
+- Add normalized public observations, transactional global identity reservations, ambiguity holds and cross-query review reuse with immutable origin ownership.
+- Add a bounded fixture query planner and offline Overpass JSON parser; test separate-connection duplicate races, all dispositions, branch distinctions, provenance and stale-worker rejection.
+- Record the Quezon City restaurant/cafe fixture and failed one-request source probe. Live discovery and AI/hunting remain disabled; source, campaign and worker integration are unfinished.
+
 ### Verification tooling
 
 - Add a read-only Phase 2 prerequisite checker with tests for missing databases, incomplete configuration and persisted mapping validation. Record owner-confirmed persistent-button recovery and remaining Phase 3 admission requirements.

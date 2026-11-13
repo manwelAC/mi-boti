@@ -346,3 +346,65 @@ full_phase2_accepted: false
 ```
 
 The focused rerun followed explicit connection-close and missing-resource guard improvements. Remaining L01 cases are tracked in the roadmap checkpoint; they were not silently passed. Source policy/metadata pages were reviewed again, without discovery queries or dataset downloads. Initial locality/category and D12 source approval are still prerequisites. Phase 3 application features have not started and AI/hunting remain disabled. Required manual actions are the live Discord checks and later selection of the first small campaign/source fixture. No package version or release tag changed for this verification tooling.
+
+## Phase 3 registry/discovery-core increment — 2026-11-14
+
+The owner authorized a staged Phase 3 start using Quezon City restaurants and cafes. The owner also confirmed channel-rename button handling and deferred the separate-user live test for the solo server; that case is NOT PERFORMED. This increment is not full P2/P3 acceptance.
+
+Implemented: pure Unicode/domain/address/contact identity signals; bounded observations; global transactional reservations and strong claims; duplicate provenance events; conflict/review holds and cross-query open-review reuse; explicit branch distinctions; fixed bounded query templates/fingerprints; offline Overpass parsing with provenance, missing-data limitations and conservative partial-result flags. Repository writes require a matching unexpired uncancelled DISCOVER lease and RUNNING query. All dispositions participate in matching. No research, lead, scoring, AI or quota records are created.
+
+New application files: domain/registry.py, repositories/registry.py, discovery/__init__.py, discovery/planner.py and discovery/overpass.py under src/mi_boti. New tests: tests/integration/test_registry.py and tests/unit/test_registry_normalization.py, test_discovery_planner.py and test_overpass_parser.py. Updated README, CHANGELOG, docs 04/08/21/22/23 and the ignored local AGENTS implementation appendix; mandatory sections 1–22 remain unchanged. No dependencies or migrations changed.
+
+Verification used synthetic observations and real SQLite, including two independent concurrent connections, consistent source ownership, split strong claims, normalized aliases, every disposition, persisted restart lookup, shared signals, ambiguous review reuse, stale/cancelled/foreign-policy results, fixed-query injection rejection and malformed/partial source payloads. Ordinary tests made no live source requests. The separately bounded source probe below is the only live discovery request in this increment.
+
+```text
+.venv\Scripts\python.exe -m pytest -q
+404 passed, 16 warnings in 10.67s
+.venv\Scripts\python.exe scripts/check_phase2_prerequisites.py
+Exit 0; all nine local checks true
+resources=16, command_channels=21, output_destinations=9, panels=4, jobs=0, hunts=0
+full_phase2_accepted=false
+```
+
+The 16 warnings remain upstream discord.py deprecations. The production checkpoint was read-only. No real business observations were inserted and no Discord resource mutations occurred during this increment.
+
+The owner-requested single bounded live query produced this actual diagnostic output. Timeout means a usable response did not arrive in time; it is not a zero-business result or an AI allowance event. No alternate endpoint was used.
+
+```json
+{
+  "endpoint": "https://overpass-api.de/api/interpreter",
+  "query_sha256": "17f5fe5005595b4a3674d99d28bc931d32398ace2f7df6fb1b8eefea770a0b34",
+  "bbox": [
+    14.648,
+    121.047,
+    14.657,
+    121.061
+  ],
+  "categories": [
+    "restaurant",
+    "cafe"
+  ],
+  "attempts": 1,
+  "element_cap": 5,
+  "response_cap_bytes": 1048576,
+  "client_deadline_seconds": 20,
+  "production_source_approved": false,
+  "state": "FAILED",
+  "error_type": "ReadTimeout",
+  "elapsed_seconds": 18.7
+}
+```
+
+The following documentation audit was executed before adding this record. It checks local Markdown/HTML file targets and headings, including ../ links. It does not repeat the historical scoring-arithmetic or full schema/config audit. Existing schema/config values and scoring contracts were not changed.
+
+```json
+{
+  "published_markdown_files": 27,
+  "relative_targets_checked": 252,
+  "anchors_checked": 31,
+  "broken_targets": [],
+  "protected_local_agents_sha256": "3c139ab0bdbb9a434d587f2ca45f3ba117963a19bce5fd9e362bf7747aeaf259"
+}
+```
+
+Limitations: live L03 remains unpassed, D12 source approval is open, and the source must stay disabled. Campaign Discord handlers, approved SSRF-safe transport, request/daily budget reservations, persisted query/coverage lifecycle, bounded worker dispatch with fresh authorization, review resolution UI and parent-link management remain unfinished. No local extract or new parser dependency was selected or downloaded. Full Phase 3 and later phases are not complete. Required next input is a viable approved source path; further offline work can proceed without enabling it. No package release version or milestone tag is advanced for this partial increment.

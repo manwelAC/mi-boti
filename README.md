@@ -32,7 +32,7 @@ The goal is a durable working memory for custom software prospecting: who was di
 | :--- | :--- | :--- |
 | Find businesses through permitted public sources and keep a global registry across campaigns. | Preserve public evidence, its source and its limits before drawing conclusions. | Manage prospects, notes, follow-ups and drafts, with human review and manual sending. |
 
-*These describe the target workflow. Discovery, research and CRM are still under development.*
+*These describe the target workflow. The discovery core is in progress; live discovery, research and CRM remain unavailable.*
 
 ## Current status
 
@@ -44,8 +44,8 @@ The foundation and Discord integration are implemented. Live checks have confirm
 | :--- | :--- |
 | Foundation | Implemented: configuration, private storage, logging, migrations and backup primitives |
 | Discord workspace | Implemented: private channels, authorization, confirmed provisioning and persistent panels |
-| Verification | **340 automated tests passed** on Windows / CPython 3.14.6; 16 upstream SDK warnings remain |
-| Discovery & registry | Next development milestone; source approval and live connectivity remain open |
+| Verification | **404 automated tests passed** on Windows / CPython 3.14.6; 16 upstream SDK warnings remain |
+| Discovery & registry | In progress: offline parser/planner and transactional registry; live source and Discord workflows remain disabled |
 | Research & CRM | Planned for the non-AI MVP |
 | AI & autonomous hunting | Disabled until a provider passes real compatibility and allowance verification |
 
