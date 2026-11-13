@@ -3,7 +3,7 @@
 from contextlib import ExitStack, contextmanager
 
 from .config import Settings
-from .logging import configure_logging
+from .logging import configure_logging, close_logging
 from .repositories.database import Database
 from .storage.lock import DeploymentLock
 from .storage.artifacts import ArtifactStore
@@ -22,7 +22,7 @@ def initialize(settings: Settings):
             level=settings.values["runtime.log_level"], max_bytes=settings.values["runtime.log_max_bytes"],
             backups=settings.values["runtime.log_backups"],
         )
-        stack.callback(lambda: [handler.close() for handler in logger.handlers])
+        stack.callback(close_logging, logger)
         database = stack.enter_context(Database(confined(root, "mi_boti.sqlite3"),
                                                busy_timeout_ms=settings.values["runtime.sqlite_busy_timeout_ms"]))
         database.migrate(minimum_disk_mib=minimum)

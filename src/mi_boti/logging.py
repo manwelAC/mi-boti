@@ -16,6 +16,7 @@ class Redactor:
         for secret in self._secrets:
             text = text.replace(secret, "[REDACTED]")
         text = re.sub(r"(?i)\b(Bearer|Basic)\s+[^\s,;\"']+", r"\1 [REDACTED]", text)
+        text = re.sub(r"((?:webhooks|interactions)/[0-9]+/)[^/?\s\"'<>]+", r"\1[REDACTED]", text)
         text = re.sub(
             r"(?i)([\"']?(?:[\w-]*(?:token|password|secret|api[_-]?key)|authorization)[\"']?\s*[:=]\s*)(?:\"[^\"]*\"|'[^']*'|[^\s,;}]+)",
             r"\1[REDACTED]", text,
@@ -46,4 +47,24 @@ def configure_logging(log_path: Path, *, secrets=(), level="INFO", max_bytes=524
     logger.setLevel(level)
     logger.addHandler(handler)
     logger.propagate = False
+    # SDK and event-loop diagnostics can contain interaction/webhook routes.
+    # Route those through the same final redaction boundary, never raw stderr.
+    for name in ("discord", "asyncio"):
+        dependency = logging.getLogger(name)
+        for previous in dependency.handlers[:]:
+            dependency.removeHandler(previous)
+        dependency.setLevel(level)
+        dependency.addHandler(handler)
+        dependency.propagate = False
     return logger
+
+
+def close_logging(logger):
+    handlers = set(logger.handlers)
+    for name in ("mi_boti", "discord", "asyncio"):
+        target = logging.getLogger(name)
+        for handler in tuple(target.handlers):
+            if handler in handlers:
+                target.removeHandler(handler)
+    for handler in handlers:
+        handler.close()

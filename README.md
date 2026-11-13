@@ -4,24 +4,24 @@
 
 Discover businesses, preserve public evidence, and manage prospects for custom software development—all through Discord. Mi Boti uses SQLite and local storage, with human review and manual sending for every external outreach message.
 
-[Project status](#current-status) · [Quick start](#quick-start) · [Documentation](#documentation-index) · [Decisions](#decisions)
+[v0.2.0 release notes](CHANGELOG.md#020--2026-11-14) · [Project status](#current-status) · [Quick start](#quick-start) · [Documentation](#documentation-index) · [Decisions](#decisions)
 
 ---
 
 ## Current status
 
 > [!IMPORTANT]
-> **Phase 1 foundation is implemented and locally verified.** The full Discord application is still in development. AI execution and autonomous hunting are disabled.
+> **Phase 2 Discord infrastructure is implemented and locally verified.** Live setup, repeat setup, command restrictions and post-restart command handling have been verified with the owner; remaining L01 cases are pending. AI execution and autonomous hunting remain disabled.
 
 | Component | Status | Details |
 | :--- | :--- | :--- |
 | Application foundation | **Implemented** | Configuration, redacted logs, private storage, deployment locking, 41 SQLite tables, checksummed migrations, artifacts, and verified backup/restore primitives |
-| Automated verification | **66 tests passed** | Last verified on Windows / CPython 3.14.6; other supported Python versions and operating systems remain untested |
-| Discord infrastructure | **Next: Phase 2** | Bot initialization, authorization, confirmed setup, channel restrictions, and persistent controls |
+| Automated verification | **337 tests passed** | Windows / CPython 3.14.6; automated tests are distinct from live acceptance |
+| Discord infrastructure | **Implemented; live checks partially verified** | Guild-scoped commands, fresh authorization, confirmed setup, ID mappings, private channels and persistent controls |
 | Discovery, research, and CRM | **Not implemented** | Planned through the non-AI MVP; the latest Philippines discovery connectivity probe failed |
 | AI providers and hunting | **Blocked** | No provider has passed the full compatibility and subscription-allowance gate |
 
-The owner authorized Phase 0 assessment and Phase 1 development on **2026-11-14**. See the [implementation report and executed checks](docs/22-ACCEPTANCE-CRITERIA.md#phase-0-assessment-and-phase-1-implementation--2026-11-14) for the file inventory, results, limitations, and remaining work. Local tests do not establish production readiness or live integration compatibility.
+The owner authorized Phase 0 assessment, Phase 1 development and Phase 2 Discord infrastructure. See the [foundation report](docs/22-ACCEPTANCE-CRITERIA.md#phase-0-assessment-and-phase-1-implementation--2026-11-14) and [Phase 2 report](docs/22-ACCEPTANCE-CRITERIA.md#phase-2-discord-infrastructure--2026-11-14) for verification and limitations. Local tests do not establish production readiness or live integration compatibility.
 
 ## What Mi Boti is being built to do
 
@@ -48,7 +48,7 @@ There is no separate website or administrative frontend, paid discovery dependen
 
 ## Quick start
 
-These commands are for **local foundation development**, not launching a working Discord bot. Run them from the repository folder using the verified Windows / CPython 3.14 environment.
+Run these commands from the repository folder using the verified Windows / CPython 3.14 environment. The bot now supports Phase 2 setup and authorization; discovery, research, CRM and AI execution remain unavailable.
 
 ### 1. Create the environment
 
@@ -105,6 +105,20 @@ The future Discord connection additionally requires `MI_BOTI_DISCORD_TOKEN`. Kee
 
 </details>
 
+### 4. Connect the bot and preview server setup
+
+The prepared local `run-local.ps1` uses the deployment IDs supplied by the operator and is ignored by Git. For another deployment, copy [run-local.example.ps1](run-local.example.ps1) to `run-local.ps1`; the template requests the nonsecret IDs interactively.
+
+```powershell
+.\run-local.ps1
+```
+
+Enter the **regenerated bot token at the masked local prompt**. The launcher saves it with Windows account-bound encryption under `%LOCALAPPDATA%\MiBoti\credentials`, outside the project, and reuses it on later starts. Run `.\run-local.ps1 -ResetToken` to replace the saved token after rotation. It is never saved to configuration or source. Leave that terminal running; press Ctrl+C for a controlled shutdown. The bot must be invited with `bot` and `applications.commands` scopes and the permissions listed in [doc 06](docs/06-DISCORD-SERVER-ARCHITECTURE.md). It does not require Administrator, Message Content intent, or an inbound public endpoint/public key.
+
+As the configured owner or a server administrator, run `/setup` in a server text channel. Review the private resource/permission preview and press **Confirm setup** only when it matches your intent. No categories, channels or panels are created before confirmation. Repeating setup reuses persisted IDs; deleted or uncertain resources require another approved recovery preview. Once configured, operational commands enforce their assigned channel IDs. Unimplemented workflows explicitly reject execution without creating jobs.
+
+For an already configured environment, `.venv\Scripts\python.exe -m mi_boti run` uses `MI_BOTI_DISCORD_TOKEN`, `MI_BOTI_GUILD_ID`, `MI_BOTI_OWNER_IDS` and optional `MI_BOTI_APPLICATION_ID`. The application ID is checked before command synchronization. No hunting or setup runs automatically at startup/reconnect. Live acceptance is tracked in doc 22; never paste tokens into chat.
+
 ## Operating safeguards
 
 Administrator setup uses `/setup` with a preview and explicit confirmation. Operational commands validate the guild, user, permission, configuration, and persisted channel ID before creating work. Channel names are not authorization identifiers.
@@ -159,7 +173,7 @@ The authority order is:
 2. **[Doc 01: product requirements](docs/01-PRODUCT-REQUIREMENTS.md)** — the normative requirement inventory.
 3. **Other numbered documents** — reference contracts consulted for the component being changed.
 
-Read the agent instructions and relevant component contracts before implementation; reading every numbered document before every task is unnecessary. Resolve contradictions using this order, follow the roadmap and verify each applicable phase gate. The current implementation scope is the Phase 1 foundation. Production source policies, deployment IDs/permissions, and any enabled provider still require the documented configuration and verification.
+Read the agent instructions and relevant component contracts before implementation; reading every numbered document before every task is unnecessary. Resolve contradictions using this order, follow the roadmap and verify each applicable phase gate. The current implementation covers the foundation and Phase 2 Discord infrastructure, with the real-server gate pending. Production source policies, deployment IDs/permissions, and any enabled provider still require the documented configuration and verification.
 
 ## Decisions
 
@@ -196,3 +210,7 @@ The remaining OPEN inputs are **D11: verified AI provider**, **D12: approved dis
 | D15 | The initial target market is the Philippines (country code PH); any sample city/category used for feasibility is a test fixture, not a campaign decision | FINAL | Project owner | [Discovery scope and probe](docs/08-BUSINESS-DISCOVERY.md) |
 
 </details>
+
+## Versioning and changes
+
+Mi Boti uses `MAJOR.MINOR.PATCH` versions and annotated `v` tags. Before 1.0, minor releases identify development milestones and may change contracts; patch releases contain compatible fixes. Version 0.2.0 packages the Discord infrastructure integration and does not declare the full MVP or autonomous product complete. See the [changelog](CHANGELOG.md) for release scope and limitations. Commit subjects use Conventional Commits (`feat`, `fix`, `docs`, `test`, `chore`) with a component scope when useful; commit bodies explain behavior, verification and remaining gates.

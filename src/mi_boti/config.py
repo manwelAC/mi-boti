@@ -17,7 +17,7 @@ from .domain.values import snowflake
 
 ENV_KEYS = frozenset({
     "MI_BOTI_DISCORD_TOKEN", "MI_BOTI_GUILD_ID", "MI_BOTI_OWNER_IDS",
-    "MI_BOTI_CONFIG_FILE", "MI_BOTI_DATA_DIR",
+    "MI_BOTI_CONFIG_FILE", "MI_BOTI_DATA_DIR", "MI_BOTI_APPLICATION_ID",
 })
 PROVIDER_KEYS = frozenset({"enabled", "executable_path", "expected_backend", "model_scope", "profile_id"})
 SOURCE_KEYS = frozenset({
@@ -46,6 +46,7 @@ class Settings:
     guild_id: str | None = None
     owner_ids: tuple[str, ...] = ()
     discord_token: str | None = field(default=None, repr=False)
+    application_id: str | None = None
 
     def require_identity(self, *, token: bool = False) -> None:
         if not self.guild_id or not self.owner_ids:
@@ -166,7 +167,7 @@ def _dynamic(section: dict, allowed: frozenset, *, source: bool) -> Mapping:
             if urlsplit(options["endpoint"]).hostname not in options["allowed_hosts"]:
                 raise ConfigurationError("Source endpoint is outside its host allowlist.")
         if options.get("enabled"):
-            raise ConfigurationError("Provider/source execution is unavailable in Phase 1; keep enabled=false.")
+            raise ConfigurationError("Provider/source execution is not implemented or verified; keep enabled=false.")
         result[identifier] = _freeze(options)
     return MappingProxyType(result)
 
@@ -214,4 +215,5 @@ def load_settings(environ: Mapping[str, str] | None = None, *, cwd: Path | None 
         raise ConfigurationError("Owner IDs must be unique.")
     return Settings(config_file.absolute(), data_dir.absolute(), _freeze(values),
                     _dynamic(providers, PROVIDER_KEYS, source=False),
-                    _dynamic(sources, SOURCE_KEYS, source=True), guild, owners, token)
+                    _dynamic(sources, SOURCE_KEYS, source=True), guild, owners, token,
+                    snowflake(env["MI_BOTI_APPLICATION_ID"]) if env.get("MI_BOTI_APPLICATION_ID") else None)
