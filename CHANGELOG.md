@@ -4,6 +4,10 @@ Versions use MAJOR.MINOR.PATCH with annotated v tags. Releases before 1.0 are de
 
 ## Unreleased
 
+### Verification tooling
+
+- Add a read-only Phase 2 prerequisite checker with tests for missing databases, incomplete configuration and persisted mapping validation. Record owner-confirmed persistent-button recovery and remaining Phase 3 admission requirements.
+
 ### Documentation
 
 - Redesign the README around a personal workspace identity, with the approved wide cat-and-laptop banner, plain typography, milestone overview and compact navigation.

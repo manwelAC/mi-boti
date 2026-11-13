@@ -38,13 +38,13 @@ The goal is a durable working memory for custom software prospecting: who was di
 
 **v0.2.0 · Discord infrastructure milestone**
 
-The foundation and Discord integration are implemented. Live checks have confirmed setup, repeat setup, channel restrictions and command responses after restart. Full live acceptance is still in progress.
+The foundation and Discord integration are implemented. Live checks have confirmed setup, repeat setup, channel restrictions, command responses and the hunt-control button after restart. Full live acceptance is still in progress.
 
 | Layer | Progress |
 | :--- | :--- |
 | Foundation | Implemented: configuration, private storage, logging, migrations and backup primitives |
 | Discord workspace | Implemented: private channels, authorization, confirmed provisioning and persistent panels |
-| Verification | **337 automated tests passed** on Windows / CPython 3.14.6; 16 upstream SDK warnings remain |
+| Verification | **340 automated tests passed** on Windows / CPython 3.14.6; 16 upstream SDK warnings remain |
 | Discovery & registry | Next development milestone; source approval and live connectivity remain open |
 | Research & CRM | Planned for the non-AI MVP |
 | AI & autonomous hunting | Disabled until a provider passes real compatibility and allowance verification |

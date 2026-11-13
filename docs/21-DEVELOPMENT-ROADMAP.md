@@ -89,3 +89,22 @@ After each phase, provide implemented features; exact created/modified files; co
 ## Current Phase 2 checkpoint — 2026-11-14
 
 Phase 2 implementation is owner-authorized. Its offline infrastructure tests pass. The owner has verified real setup, repeat setup, channel enforcement, disabled-provider status and post-restart command response; the remaining L01 cases are tracked in doc 22. Do not claim P2 complete or advance to Phase 3 until the required live infrastructure checks are recorded.
+
+## Phase 3 prerequisite checkpoint — 2026-11-14
+
+The owner requested prerequisite verification before Phase 3 implementation. This work does not waive P2 or approve a discovery source. The local instruction file is intentionally untracked; the local owner brief still applies.
+
+| Prerequisite | Evidence / remaining work |
+|---|---|
+| Foundation and local persistence | Automated suite passes; read-only production database quick_check and foreign_key_check pass |
+| Persisted Discord configuration | READY; 16 active resources, 21 command mappings, nine output mappings and four active panel records |
+| Live setup and restart | Owner verified setup/repeat setup, mapped/wrong-channel commands and command response after restart |
+| Persistent controls | Owner clicked the existing bot-control Refresh status button after restart and received the disabled-hunting status |
+| Remaining L01 cases | Rename/deletion recovery, independent user/role denial, permission-loss behavior and measured defer timing must still be recorded |
+| Initial campaign scope | Philippines is fixed; first locality, category and bounded search area still need selection |
+| Source approval and connectivity | D12 remains OPEN; prior Overpass probes failed; no source is enabled |
+| Phase 3 implementation | Not started while the prerequisite checkpoint is in progress |
+
+Run `.venv\Scripts\python.exe scripts/check_phase2_prerequisites.py` to inspect the current local database without modifying it. The script never reads a token or makes a network request. Its local success must not be interpreted as live Discord acceptance. It fails closed on missing/incompatible databases and does not create a missing database.
+
+After the outstanding Discord checks, define one small campaign fixture and select the source validation path. A bounded manual Overpass connectivity probe and a local Philippines OSM extract are separate options; neither is silently approved. Re-review source policy, attribution, request/download budgets and parser compatibility before enabling it. A local extract importer would require a documented implementation decision and parser dependency review before development. No source selection permits Nominatim harvesting, paid discovery or AI/hunting enablement.

@@ -315,3 +315,34 @@ Executed full-suite release verification:
 The warnings remain upstream discord.py Python 3.14 deprecations. No new live Discord mutations or source/AI execution were performed for release packaging. D11 provider selection/verification and D12 sustainable discovery-source approval remain open. Deployment IDs and the encrypted credential have been configured locally; secrets are not included in this release.
 
 Release staging audit: 54 changed/new files; 259 relative file links checked with zero broken file targets; no token-shaped strings or private/runtime files found in staged content. The protected AGENTS prefix SHA-256 remains 3c139ab0bdbb9a434d587f2ca45f3ba117963a19bce5fd9e362bf7747aeaf259. git diff --cached --check exited 0. These checks do not constitute a full historical secret scan or anchor audit.
+
+## Phase 3 admission prerequisites — 2026-11-14
+
+The owner requested prerequisite verification before Phase 3 implementation. The owner confirmed that the existing Refresh status button in bot-control, clicked after the earlier restart, returned: Hunting is disabled and no hunt worker is running. Discovery, research, scoring and CRM workflows are not implemented yet. This is user-observed live persistent-control evidence; it is not an agent measurement of defer timing. A renamed-channel button check has been requested and remains pending a result.
+
+Added scripts/check_phase2_prerequisites.py and tests/integration/test_prerequisite_check.py. The script opens an existing SQLite database in URI read-only mode with query_only enabled, closes it explicitly, never reads credentials and makes no network calls. Tests prove missing files are not created, incomplete configuration fails, persisted setup passes without changing its dump, missing command mappings fail, and local success never claims complete live acceptance.
+
+Executed checks:
+
+```text
+.venv\Scripts\python.exe -m pytest -q
+340 passed, 16 warnings in 8.73s
+.venv\Scripts\python.exe -m pytest -q tests/integration/test_prerequisite_check.py
+3 passed in 0.80s
+.venv\Scripts\python.exe scripts/check_phase2_prerequisites.py
+Exit 0
+sqlite_quick_check: true
+foreign_keys: true
+setup_ready: true
+managed_resources: true
+resource_parent_links: true
+command_channels: true
+output_destinations: true
+persistent_panel_records: true
+no_unfinished_setup: true
+counts: resources=16, command_channels=21, output_destinations=9, panels=4, jobs=0, hunts=0
+local_checkpoint_passed: true
+full_phase2_accepted: false
+```
+
+The focused rerun followed explicit connection-close and missing-resource guard improvements. Remaining L01 cases are tracked in the roadmap checkpoint; they were not silently passed. Source policy/metadata pages were reviewed again, without discovery queries or dataset downloads. Initial locality/category and D12 source approval are still prerequisites. Phase 3 application features have not started and AI/hunting remain disabled. Required manual actions are the live Discord checks and later selection of the first small campaign/source fixture. No package version or release tag changed for this verification tooling.

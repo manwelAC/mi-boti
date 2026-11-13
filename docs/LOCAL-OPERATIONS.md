@@ -74,3 +74,11 @@ Enter the **regenerated bot token at the masked local prompt**. The launcher sav
 As the configured owner or a server administrator, run `/setup` in a server text channel. Review the private resource/permission preview and press **Confirm setup** only when it matches your intent. No categories, channels or panels are created before confirmation. Repeating setup reuses persisted IDs; deleted or uncertain resources require another approved recovery preview. Once configured, operational commands enforce their assigned channel IDs. Unimplemented workflows explicitly reject execution without creating jobs.
 
 For an already configured environment, `.venv\Scripts\python.exe -m mi_boti run` uses `MI_BOTI_DISCORD_TOKEN`, `MI_BOTI_GUILD_ID`, `MI_BOTI_OWNER_IDS` and optional `MI_BOTI_APPLICATION_ID`. The application ID is checked before command synchronization. No hunting or setup runs automatically at startup/reconnect. Live acceptance is tracked in doc 22; never paste tokens into chat.
+
+## Inspect the Phase 2 prerequisite checkpoint
+
+```powershell
+.venv\Scripts\python.exe scripts/check_phase2_prerequisites.py
+```
+
+This reads local SQLite state only. It checks integrity, READY configuration, resource parents, canonical mapping coverage and persistent panel records without creating work, accessing credentials or contacting Discord. The bot may remain running. `full_phase2_accepted` deliberately remains false because this tool cannot verify live interactions or role/resource recovery. Review the [roadmap checkpoint](21-DEVELOPMENT-ROADMAP.md#phase-3-prerequisite-checkpoint--2026-11-14) for the manual gates.
