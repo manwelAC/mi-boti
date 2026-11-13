@@ -2,6 +2,12 @@
 
 Versions use MAJOR.MINOR.PATCH with annotated v tags. Releases before 1.0 are development milestones, not production-readiness claims.
 
+## Unreleased
+
+### Documentation
+
+- Give the README a personal workspace identity with a custom SVG banner, milestone overview and compact navigation. Move the installation/launch walkthrough to the local operations reference.
+
 ## 0.2.0 — 2026-11-14
 
 ### Added
