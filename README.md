@@ -1,10 +1,11 @@
+<h1 align="center">Mi Boti</h1>
+
 <p align="center">
-  <img src="assets/mi-boti-cat-banner.png" alt="Mi Boti — a very serious tabby analyst wearing sunglasses at a computer" width="100%" />
+  <img src="assets/mi-boti-cat.png" alt="A cat in sunglasses and headphones at a computer, from the supplied meme reference" width="240" />
 </p>
 
 <p align="center">
-  <strong>Serious about leads. Questionable choice of analyst.</strong><br />
-  A personal Discord workspace for Philippine business research. Cat supervision included.
+  Personal business research and prospect tracking, inside Discord.
 </p>
 
 <p align="center">

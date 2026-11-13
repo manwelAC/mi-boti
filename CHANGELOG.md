@@ -6,6 +6,8 @@ Versions use MAJOR.MINOR.PATCH with annotated v tags. Releases before 1.0 are de
 
 ### Documentation
 
+- Simplify the README header to a plain title and the supplied cat meme; remove generated banner artwork and decorative slogans.
+
 - Replace the corporate-style banner and monogram with an original humorous cat analyst banner and a lighter README introduction.
 
 - Give the README a personal workspace identity with a custom SVG banner, milestone overview and compact navigation. Move the installation/launch walkthrough to the local operations reference.
