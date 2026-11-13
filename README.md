@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="assets/mi-boti-banner.svg" alt="Mi Boti — discover with evidence, connect with purpose" width="100%" />
+  <img src="assets/mi-boti-cat-banner.png" alt="Mi Boti — a very serious tabby analyst wearing sunglasses at a computer" width="100%" />
 </p>
 
 <p align="center">
-  <strong>A personal lead intelligence workspace. Built inside Discord.</strong><br />
-  Philippine businesses · Public evidence · Thoughtful prospecting
+  <strong>Serious about leads. Questionable choice of analyst.</strong><br />
+  A personal Discord workspace for Philippine business research. Cat supervision included.
 </p>
 
 <p align="center">
