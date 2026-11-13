@@ -4,7 +4,7 @@ Decision status: see the [README decisions table](../README.md#decisions).
 
 ## Purpose and authority
 
-This implementation baseline ties [architecture](02-TECHNICAL-ARCHITECTURE.md), [schema](04-DATABASE-SCHEMA.md), [security](18-SECURITY-AND-PRIVACY.md), and [roadmap](21-DEVELOPMENT-ROADMAP.md) together. Read [AGENTS](../AGENTS.md) first. The owner has authorized Phase 0 assessment, Phase 1 foundation and Phase 2 Discord infrastructure implementation; later components retain their phase gates.
+This implementation baseline ties [architecture](02-TECHNICAL-ARCHITECTURE.md), [schema](04-DATABASE-SCHEMA.md), [security](18-SECURITY-AND-PRIVACY.md), and [roadmap](21-DEVELOPMENT-ROADMAP.md) together. Read `AGENTS.md` first. The owner has authorized Phase 0 assessment, Phase 1 foundation and Phase 2 Discord infrastructure implementation; later components retain their phase gates.
 
 ## Configuration ownership and precedence
 

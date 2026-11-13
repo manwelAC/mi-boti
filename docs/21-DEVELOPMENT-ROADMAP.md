@@ -4,7 +4,7 @@ Decision status: see the [README decisions table](../README.md#decisions).
 
 ## Purpose and phase discipline
 
-Follow the owner's phase contracts and the explicitly authorized non-AI MVP sequence; this document scopes deliverables and verification against [22](22-ACCEPTANCE-CRITERIA.md). Read [agent instructions](../AGENTS.md) and [implementation guidelines](23-IMPLEMENTATION-GUIDELINES.md). The owner has authorized Phase 0 assessment and Phase 1 foundation development; subsequent phases retain their documented gates.
+Follow the owner's phase contracts and the explicitly authorized non-AI MVP sequence; this document scopes deliverables and verification against [22](22-ACCEPTANCE-CRITERIA.md). Read agent instructions (`AGENTS.md`, local only) and [implementation guidelines](23-IMPLEMENTATION-GUIDELINES.md). The owner has authorized Phase 0 assessment and Phase 1 foundation development; subsequent phases retain their documented gates.
 
 ## Phase 0 — Technical feasibility
 

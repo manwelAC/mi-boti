@@ -119,9 +119,11 @@ The numbered specifications describe the full target product; they do not imply 
 
 ## Authority
 
+`AGENTS.md` is a local development instruction file and is intentionally excluded from this repository. Its mandatory owner brief remains the highest authority during development.
+
 The authority order is:
 
-1. **[AGENTS.md sections 1–22](AGENTS.md)** — the owner brief and mandatory constraints.
+1. **`AGENTS.md`** — the owner brief and mandatory constraints.
 2. **[Doc 01: product requirements](docs/01-PRODUCT-REQUIREMENTS.md)** — the normative requirement inventory.
 3. **Other numbered documents** — reference contracts consulted for the component being changed.
 
@@ -145,7 +147,7 @@ The remaining OPEN inputs are **D11: verified AI provider**, **D12: approved dis
 | ID | Decision | Status | Owner | Doc reference |
 |---|---|---|---|---|
 | D00 | Detailed schemas, interfaces, arguments, roles, retention, numerical defaults and module boundaries form the technical baseline unless a more specific row applies | PROPOSED | Project owner; technical recommendation | [Architecture](docs/02-TECHNICAL-ARCHITECTURE.md), [configuration](docs/23-IMPLEMENTATION-GUIDELINES.md) |
-| D01 | Discord-native/local stack; free permitted discovery; fail-closed subscription checks; no automatic provider switch, metered fallback or external sending | FINAL | Project owner | [AGENTS sections 1–22](AGENTS.md), [requirements](docs/01-PRODUCT-REQUIREMENTS.md) |
+| D01 | Discord-native/local stack; free permitted discovery; fail-closed subscription checks; no automatic provider switch, metered fallback or external sending | FINAL | Project owner | `AGENTS.md`, [requirements](docs/01-PRODUCT-REQUIREMENTS.md) |
 | D02 | One guild and one active/paused/interrupted hunt per database | PROPOSED | Project owner; technical recommendation | [Overview](docs/00-PROJECT-OVERVIEW.md), [schema](docs/04-DATABASE-SCHEMA.md) |
 | D03 | Base active budget is 3,600 seconds, counting only RUNNING/PAUSING/STOPPING; absolute age ceiling is 604,800 seconds (seven days) | FINAL | Project owner | [Hunt clocks](docs/17-BACKGROUND-JOBS.md), [keys](docs/23-IMPLEMENTATION-GUIDELINES.md) |
 | D04 | Effective active and request/candidate/AI budgets scale with quota under hard caps; quota 25 receives 18,000 active seconds, 500 candidates and 500 AI tasks | PROPOSED | Project owner; validate in Phase 5 | [Budget formulas and throughput](docs/17-BACKGROUND-JOBS.md) |

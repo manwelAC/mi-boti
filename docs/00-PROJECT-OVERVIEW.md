@@ -4,7 +4,7 @@ Decision status: see the [README decisions table](../README.md#decisions).
 
 ## Purpose and authority
 
-This document defines the project's scope and vocabulary. The [requirements](01-PRODUCT-REQUIREMENTS.md), [architecture](02-TECHNICAL-ARCHITECTURE.md), and [agent rules](../AGENTS.md) provide the related contracts. The package is self-contained. AGENTS.md sections 1–22 take precedence over docs/01, which takes precedence over the other numbered documents. Developers consult the numbered documents relevant to the component they are changing.
+This document defines the project's scope and vocabulary. The [requirements](01-PRODUCT-REQUIREMENTS.md), [architecture](02-TECHNICAL-ARCHITECTURE.md), and agent rules (`AGENTS.md`, local only) provide the related contracts. The package is self-contained. AGENTS.md sections 1–22 take precedence over docs/01, which takes precedence over the other numbered documents. Developers consult the numbered documents relevant to the component they are changing.
 
 ## Scope and responsibilities
 
