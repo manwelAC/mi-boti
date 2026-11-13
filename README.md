@@ -1,7 +1,5 @@
-<h1 align="center">Mi Boti</h1>
-
 <p align="center">
-  <img src="assets/mi-boti-cat.png" alt="A cat in sunglasses and headphones at a computer, from the supplied meme reference" width="240" />
+  <img src="assets/mi-boti-banner.png" alt="Mi Boti — plain white lettering beside a wide-eyed tabby at a laptop" width="100%" />
 </p>
 
 <p align="center">
