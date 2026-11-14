@@ -72,3 +72,130 @@ All dispositions participate in matching. A consistent strong claim can attach a
 The planner accepts only the approved fixture categories, finite boxes no larger than the documented one-degree-per-axis envelope, integer limits 1–100 and a positive target version. Coordinates are canonicalized to eight decimal places; collapsed boxes are rejected. It generates fixed query templates and deterministic fingerprints, with no arbitrary query interpolation or live permission implied. The parser retains distinct OSM node/way/relation identifiers, copies only published fields, reports missing coordinates and flags remarks or output-cap hits as incomplete. It does not mark geographic coverage complete.
 
 Remaining Phase 3 work includes approved safe transport, source/daily request reservations, query history/coverage lifecycle, campaign commands, bounded background dispatch with fresh authorization/cancellation, identity-review workflows and real L03 validation. Do not describe this code increment as completed or enabled discovery.
+
+## Source policy review and SSRF-pinned transport — 2026-11-14
+
+Direct socket/TLS diagnostics against `overpass-api.de` and `z.overpass-api.de` established that the earlier timeouts were caused by server-side saturation (`HTTP 502 Bad Gateway: This Overpass API server is currently at capacity. All query workers are busy and the request queue is full`). A single diagnostic request to `https://api.openstreetmap.org/api/0.6/map.json` returned HTTP 200 in 2.19 seconds, but the [OpenStreetMap API Usage Policy](https://operations.osmfoundation.org/policies/api/) explicitly states that the v0.6 editing API is provided for editing the map and is **not** provided for read-only projects or third-party data consumers. Consequently:
+
+1. `OverpassDiscoveryAdapter` explicitly rejects `api.openstreetmap.org` and `/api/0.6/map.json` endpoints (`POLICY_UNKNOWN`), and `config.py` rejects `enabled = true` on all discovery sources while **D12** and **L03** remain **OPEN**.
+2. [discovery/overpass.py](../src/mi_boti/discovery/overpass.py) implements full SSRF IP pinning (`format_pinned_url` + `Host` header + `extensions={"sni_hostname": ascii_host}`), rejecting any mixed public/private DNS answers, IPv4-mapped IPv6 non-global addresses, or redirects, and enforces process-wide rate limiting (`min_interval_seconds >= 10`, `max_concurrency = 1`, and `Retry-After` preservation across adapter instances).
+3. Proposed permitted source paths for owner decision (**D12**):
+   - **Option A — Regional Geofabrik Philippines OSM extract (`philippines-latest.osm.pbf`):** Explicitly permitted by Geofabrik and OSM ODbL for bulk/read-only regional querying without burdening public interactive APIs; requires owner approval to add a bounded local PBF/GeoJSON extract importer.
+   - **Option B — Self-hosted / dedicated Overpass instance or owner-approved Overpass mirror with explicit automated-query permission:** Uses `OverpassDiscoveryAdapter` once its operator policy and live `L03` Quezon City probe pass.
+
+## Approved Philippines extract importer and live L03 verification — 2026-11-14
+
+Following the source policy review above, the project owner approved **Option A** ([docs/PHILIPPINES-EXTRACT-PLAN.md](PHILIPPINES-EXTRACT-PLAN.md)): Geofabrik's public Philippines regional OpenStreetMap extract (`https://download.geofabrik.de/asia/philippines-latest.osm.pbf`, official region page `https://download.geofabrik.de/asia/philippines.html`, ODbL license `https://www.openstreetmap.org/copyright`). No paid discovery service, Nominatim harvesting, OSM editing API, or public Overpass backend is approved by this decision.
+
+### Dependency and parser verification
+
+- Pinned `osmium==4.3.2` (PyOsmium, BSD 2-Clause license) under `[project.optional-dependencies] discovery = ["osmium==4.3.2"]` in [pyproject.toml](../pyproject.toml) and [requirements-py314-windows.txt](../requirements-py314-windows.txt).
+- Verified binary wheel installation (`osmium-4.3.2-cp314-cp314-win_amd64.whl`) on Windows / CPython 3.14.6 via `--only-binary=:all:` without compiling native code.
+
+### Bounded download, import, and local snapshot architecture ([discovery/philippines_extract.py](../src/mi_boti/discovery/philippines_extract.py))
+
+1. **Explicit offline CLI workflow (`import-ph-extract` and `verify-ph-extract` in [`__main__.py`](../src/mi_boti/__main__.py)):**
+   - Never downloads or updates the dataset on bot startup, reconnect, or `/discover` execution.
+   - Validates `[sources.philippines_extract]` policy: fixed official URL (`https://download.geofabrik.de/asia/philippines-latest.osm.pbf`), allowlisted HTTPS hosts (`download.geofabrik.de`), reviewed redirect hops (`<=3`, verifying HTTPS and host allowlist on every hop), SSRF IP pinning (`resolve_public_host` + `format_pinned_url` + `Host` header + `sni_hostname`), process-wide rate limiting (`min_interval_seconds >= 10`, `max_concurrency = 1`), finite attempts (`<=3`), timeout (`<=600s`), byte ceiling (`<=1 GiB`), and free disk space check (`minimum_free_mib`).
+   - Downloads the `.md5` sidecar and `.osm.pbf` into an isolated `tmp/extract_import_<uuid>/` directory, verifies the provider MD5 (explicitly documented as download error detection, **not** a cryptographic security signature) and computes the local SHA-256 (`pbf_sha256`).
+2. **Bounded subprocess-isolated streaming PBF import (`import_pbf_to_snapshot`) and immutable generation publication:**
+   - Serializes concurrent import/publication operations via an exclusive OS file lock (`datasets/philippines/publish.lock` using `DeploymentLock`).
+   - Enforces a finite monotonic deadline on both download imports and `--pbf-file` CLI imports (`monotonic() + max(policy["timeout_seconds"], 1.0)` when not explicitly supplied).
+   - Runs native PyOsmium (`osmium==4.3.2`) PBF parsing inside a bounded child subprocess (`_parse_pbf_in_isolated_subprocess`, `isolate_process=True`) with a disk-backed temporary SQLite scratch workspace under `tmp/extract_import_<uuid>/`, killing the child process (`proc.kill()`) immediately if `deadline_monotonic` expires or `is_cancelled()` fires.
+   - Inspects the PBF header (`osmium.io.File(..., "pbf")`), rejecting `osh.pbf` historical/internal extracts, and streams matching `amenity=cafe|restaurant` objects using `osmium.FileProcessor` with `TagFilter`, copying all required fields from transient PyOsmium views before advancing the iterator.
+   - Preserves distinct `node/<id>`, `way/<id>`, and `relation/<id>` identities. Derived `way`/`relation` centroids are explicitly marked `"approximate": True` in `coordinates` and carry a limitation note (`Derived approximate centroid from OSM way/relation geometry`).
+   - Records `incomplete_geometry`, `unsupported_relations`, `skipped_invalid_tags`, and `truncated_by_cap` counts and limitations. Any non-zero incomplete/unsupported/truncated count sets `incomplete_snapshot = True`, preventing local queries from marking geographic coverage `EXHAUSTED`.
+   - Publishes each verified snapshot into its own immutable generation directory `datasets/philippines/generations/<snapshot_id>/` containing its matching `snapshot.sqlite3` and `manifest.json`, verifies the generation directory (`_verify_generation_dir`: SQLite `PRAGMA quick_check`, byte size, SHA-256, and `snapshot_meta`), and only then atomically switches the single active-generation pointer `datasets/philippines/active_generation.json` via `_replace_file_with_sharing_retry` (handling transient Windows `PermissionError` / `WinError 5` / `32` / `33` sharing conflicts from concurrent readers with bounded retry while preserving the previous verified generation on failure).
+3. **Local snapshot querying and deferred cross-database cursor acknowledgement (`PhilippinesExtractAdapter` and `jobs/discovery.py`):**
+   - Resolves `datasets/philippines/active_generation.json` (`resolve_active_snapshot_generation` using `_read_text_with_sharing_retry`), verifies the referenced immutable generation directory (`generations/<snapshot_id>/snapshot.sqlite3` + `manifest.json`), and opens `snapshot.sqlite3` in read-only URI mode (`?mode=ro`).
+   - Distinguishes the extract's data timestamp (`observed_at`, e.g. `2026-11-13T21:22:20.000000Z`) from the local query execution timestamp (`local_queried_at` in `raw_tags["mi_boti:local_queried_at"]`).
+   - Binds durable cursors (`datasets/philippines/cursors.sqlite3`) and `checkpoint_token`s to both the immutable generation ID (`snapshot_id`) and `snapshot_sha256`. Does **not** advance the durable cursor inside `PhilippinesExtractAdapter.discover()`. Instead, `discover()` reads the current cursor (resetting `last_ord` to `0` whenever `snapshot_id` or `snapshot_sha256` changes, even if identical PBF bytes were reimported with changed filtering or index caps) and returns `DiscoveryBatch(..., checkpoint_token=checkpoint_token)`.
+   - `execute_manual_discovery_job` and `execute_manual_discovery_job_async` call `source.acknowledge_checkpoint(checkpoint_token)` **only after** candidate/registry resolutions (`resolve()`), `finish_discovery_query()`, and `jobs.progress_json` are durably committed in `mi_boti.sqlite3` and after re-verifying that the job remains `RUNNING`, uncancelled, holds the active `lease_token`, has an unexpired lease, and passes fresh `authorize_dispatch`.
+   - `acknowledge_checkpoint()` coordinates with `datasets/philippines/publish.lock` so a checkpoint acknowledgement cannot race an in-flight generation publication, verifies `active_manifest.snapshot_id == checkpoint_token["snapshot_id"]` and `active_manifest.pbf_sha256 == checkpoint_token["snapshot_sha256"]`, and uses `BEGIN IMMEDIATE` to advance `last_ord` monotonically. If a cancellation, authorization loss, or process crash occurs between `discover()`, the `mi_boti.sqlite3` result commit, and `acknowledge_checkpoint()`, the unacknowledged page is replayed on the next run and safely deduplicated by the global registry (`existing` count incremented, zero records skipped or duplicated).
+   - Production discovery remains disabled in configuration (`src/mi_boti/config.py` rejects `enabled = true` on all sources and providers, and `config.example.toml` keeps `enabled = false`).
+
+### Executed live L03 verification record — 2026-11-14
+
+Executed against the live Geofabrik Philippines extract (`https://download.geofabrik.de/asia/philippines-latest.osm.pbf`) using an isolated disposable SQLite workspace (`.pytest_cache/l03_geofabrik_ph_live`, cleaned up after verification; production `data/mi_boti.sqlite3` remained untouched with `jobs=0, hunts=0`):
+
+```json
+{
+  "gate": "L03_DISCOVERY_EXTRACT",
+  "provider_url": "https://download.geofabrik.de/asia/philippines-latest.osm.pbf",
+  "final_download_url": "https://download.geofabrik.de/asia/philippines-261113.osm.pbf",
+  "downloaded_at": "2026-11-14T12:23:11.897895Z",
+  "snapshot_observed_at": "2026-11-13T21:22:20.000000Z",
+  "pbf_bytes": 613918681,
+  "provider_md5": "690772965227a78819ee413182ee38ba",
+  "pbf_sha256": "aaf01a39336ff80a049935c66199f3786f2ece65a2f056e9ebf350f60ec191c7",
+  "snapshot_db_bytes": 10465280,
+  "snapshot_db_sha256": "daa61c85ac37f29d679ba69d28c374620ddfddf66f410b9406bc215eeb3b1871",
+  "parser": "pyosmium==4.3.2",
+  "policy_version": "geofabrik-ph-2026-11",
+  "attribution": "© OpenStreetMap contributors — ODbL; https://www.openstreetmap.org/copyright",
+  "download_seconds": 69.79,
+  "import_seconds": 35.25,
+  "national_counts": {
+    "nodes_indexed": 22486,
+    "ways_indexed": 3563,
+    "relations_indexed": 48,
+    "approximate_centroids": 3611,
+    "incomplete_geometry": 1,
+    "unsupported_relations": 0,
+    "skipped_invalid_tags": 0,
+    "truncated_by_cap": 0
+  },
+  "incomplete_snapshot": true,
+  "limitations": [
+    "1 OSM element(s) had missing or incomplete geometry."
+  ],
+  "qc_fixture_bbox": [14.648, 121.047, 14.657, 121.061],
+  "query_1_page_1": {
+    "state": "SUCCEEDED",
+    "elapsed_seconds": 0.4917,
+    "dispositions": {
+      "seen": 25,
+      "new": 24,
+      "existing": 0,
+      "ambiguous": 0,
+      "invalid": 1,
+      "discovery_requests": 1,
+      "phase": "COMPLETED"
+    }
+  },
+  "query_2_page_2_cursor": {
+    "state": "SUCCEEDED",
+    "elapsed_seconds": 0.1949,
+    "dispositions": {
+      "seen": 7,
+      "new": 6,
+      "existing": 0,
+      "ambiguous": 0,
+      "invalid": 1,
+      "discovery_requests": 1,
+      "phase": "COMPLETED"
+    }
+  },
+  "query_3_repeat_page_1": {
+    "state": "SUCCEEDED",
+    "elapsed_seconds": 0.3548,
+    "dispositions": {
+      "seen": 25,
+      "new": 0,
+      "existing": 24,
+      "ambiguous": 0,
+      "invalid": 1,
+      "discovery_requests": 1,
+      "phase": "COMPLETED"
+    }
+  },
+  "disposable_db_totals": {
+    "businesses": 30,
+    "open_identity_reviews": 0,
+    "hunt_credits": 0,
+    "coverage_state": "PARTIAL"
+  }
+}
+```
+
+Because one nationwide OSM element had incomplete geometry (`incomplete_geometry = 1`), the snapshot conservatively recorded `incomplete_snapshot = true` and kept the Quezon City cell coverage state `PARTIAL` rather than claiming complete `EXHAUSTED` coverage. Across Page 1 (`limit=25`) and Page 2 (`limit=25`, resumed via durable cursor), 32 OSM observations in the Quezon City fixture bounding box were processed into 30 distinct registered businesses and 2 nameless `INVALID` candidate observations, with 0 new businesses created on the repeated Page 1 search (`existing=24, invalid=1, new=0`) and 0 hunt credits awarded.

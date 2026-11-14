@@ -10,6 +10,7 @@ Specify filesystem behavior supporting [SQLite](04-DATABASE-SCHEMA.md), [researc
 <data_dir>/
   mi_boti.sqlite3               # SQLite plus associated WAL/SHM
   deployment.lock
+  datasets/philippines/         # active_generation.json, publish.lock, cursors.sqlite3, and immutable generations/<snapshot_id>/{snapshot.sqlite3, manifest.json}
   artifacts/<uuid>/<uuid>.txt   # bounded sanitized extracts, not executable HTML
   exports/<uuid>.csv            # operator-requested CRM export
   backups/<uuid>/               # verified copy; expanded manifest is post-MVP

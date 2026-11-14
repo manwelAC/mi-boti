@@ -3,6 +3,7 @@
 from contextlib import ExitStack, contextmanager
 
 from .config import Settings
+from .jobs.discovery import recover_interrupted_work
 from .logging import configure_logging, close_logging
 from .repositories.database import Database
 from .storage.lock import DeploymentLock
@@ -27,6 +28,7 @@ def initialize(settings: Settings):
                                                busy_timeout_ms=settings.values["runtime.sqlite_busy_timeout_ms"]))
         database.migrate(minimum_disk_mib=minimum)
         database.bind_guild(settings.guild_id)
+        recover_interrupted_work(database)
         ArtifactStore(root, database, minimum_disk_mib=minimum, retention_days={
             "RESEARCH": settings.values["storage.artifact_ttl_days"],
             "EXPORT": settings.values["storage.export_ttl_days"],

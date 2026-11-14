@@ -408,3 +408,203 @@ The following documentation audit was executed before adding this record. It che
 ```
 
 Limitations: live L03 remains unpassed, D12 source approval is open, and the source must stay disabled. Campaign Discord handlers, approved SSRF-safe transport, request/daily budget reservations, persisted query/coverage lifecycle, bounded worker dispatch with fresh authorization, review resolution UI and parent-link management remain unfinished. No local extract or new parser dependency was selected or downloaded. Full Phase 3 and later phases are not complete. Required next input is a viable approved source path; further offline work can proceed without enabling it. No package release version or milestone tag is advanced for this partial increment.
+
+## Phase 3 campaigns, query/coverage lifecycle, worker and identity review — 2026-11-14
+
+Implemented the remaining offline Phase 3 core components while keeping live source transport (`D12`/`L03`) and AI/hunting (`D11`/`L02`) disabled:
+
+- **Versioned non-AI campaigns (`domain/campaigns.py`, `repositories/campaigns.py`, `discord_app/bot.py`):** Validated PH geography (`<=1.0` degree bounding box, 1–25 unique cells), approved categories (`restaurant`, `cafe`), rubric v1 weights/gates, null `provider_id`, versioned edits (`campaign_versions`), archive transitions (clearing `active_campaign_id` in `guild_config`), `/campaign create|list|edit`, and `/config set key:active_campaign_id`.
+- **Query and coverage lifecycle (`repositories/campaigns.py`):** Implemented `plan_unexhausted_queries`, `queue_discovery_query`, `begin_discovery_attempt` (enforcing per-query attempt caps, per-job request caps, and source daily request caps), and `finish_discovery_query` (`FRESH`, `EXHAUSTED`, and `PARTIAL` coverage cells with 30-day TTL; partial results never claim complete coverage).
+- **Bounded manual discovery worker and startup recovery (`jobs/discovery.py`, `runtime.py`):** Implemented idempotent `enqueue_manual_discovery`, atomic `claim_discover_job`, `heartbeat_job_lease`, `request_job_cancellation`, `recover_interrupted_work` (marking unfinished hunts/jobs `INTERRUPTED` on startup and charging at most the reserved 30-second active lease, never the offline interval), and `execute_manual_discovery_job` using an injectable `DiscoverySourcePort` outside SQLite transactions.
+- **Identity review resolution and hierarchy (`repositories/registry.py`):** Implemented `resolve_identity_review` (`LINK_EXISTING` and `CREATE_NEW`) and `link_parent_business` with named actors, revision checks, parent-cycle prevention, cross-query candidate updates, and zero retroactive hunt quota credits.
+
+Verification executed on Windows / CPython 3.14.6:
+
+```text
+.venv\Scripts\python.exe -m pytest -q
+437 passed, 19 warnings in 13.70s
+.venv\Scripts\python.exe -m compileall -q src tests
+Exit 0
+.venv\Scripts\python.exe -m pip check
+No broken requirements found.
+.venv\Scripts\python.exe scripts/check_phase2_prerequisites.py
+Exit 0; local_checkpoint_passed=true, full_phase2_accepted=false
+```
+
+Limitations: live discovery source (`D12`/`L03`) remains unapproved and disabled; `/discover` remains blocked from live network calls until a permitted source path passes L03.
+
+## Phase 3 review blocker fixes and gate status — 2026-11-14
+
+Corrected the five Phase 3 review blockers while keeping live discovery (`D12`/`L03`), AI execution (`D11`/`L02`), and autonomous hunting disabled:
+
+1. **Source approval (`D12`) and `L03` gate correction:**
+   - The OpenStreetMap v0.6 editing API (`https://api.openstreetmap.org/api/0.6/map.json`) is governed by the [OSM API Usage Policy](https://operations.osmfoundation.org/policies/api/), which prohibits read-only projects. Although a single network request returned HTTP 200 in 2.19 seconds, connectivity to an unpermitted editing endpoint does **not** satisfy `D12` or pass `L03`.
+   - Removed `map.json` support from `OverpassDiscoveryAdapter` (now explicitly rejected with `POLICY_UNKNOWN`) and restored fail-closed config validation (`enabled = true` is rejected in `src/mi_boti/config.py`). `D12` and `L03` remain **OPEN**.
+2. **Complete SSRF IP pinning (`src/mi_boti/discovery/overpass.py`):**
+   - `OverpassDiscoveryAdapter` resolves DNS via `resolve_public_host`, rejects the host if **any** returned record is non-global (including mixed public/private records and IPv4-mapped IPv6 addresses), rewrites the request target to the pinned literal IP (`format_pinned_url`), preserves the original `Host` header, and sets `extensions={"sni_hostname": ascii_host}` so TLS SNI and certificate hostname verification validate the original hostname without secondary DNS resolution.
+3. **Fresh authorization revalidation (`src/mi_boti/jobs/discovery.py`, `src/mi_boti/discord_app/bot.py`):**
+   - Replaced the captured `authorized_ok` boolean with a live callback (`_fresh_job_authorized`) re-evaluated before every external query dispatch, before every retry attempt, and before every result commit. Covers lost operator roles, changed channel mappings, incomplete configuration, and unavailable authorization checks.
+4. **Non-blocking async worker execution, thread-isolated SQLite heartbeats, end-to-end deadlines, and bounded resolver/worker lifecycle (`src/mi_boti/jobs/discovery.py`, `src/mi_boti/discovery/overpass.py`, `src/mi_boti/discord_app/bot.py`):**
+   - Added `execute_manual_discovery_job_async` so `/discover` executes network calls outside `AsyncDatabase`'s single-thread SQLite executor, keeping database queries responsive during slow network fetches.
+   - In synchronous `execute_manual_discovery_job`, the heartbeat thread opens its own dedicated WAL `Database(db.path)` connection (`_hb_thread_loop`) rather than sharing the caller's `sqlite3.Connection` across threads or disabling `check_same_thread`.
+   - Enforced a total monotonic deadline (`op_deadline` / `attempt_deadline_m`) across slot waits, DNS resolution, TCP/TLS connection, response headers, and body streaming, selecting the stricter (`min`) of an explicit `request_timeout_seconds` and `policy["timeout_seconds"]`, rejecting late responses, and registering `client.close` via `register_abort` so cancellation or timeout actively aborts in-flight HTTP work and settles jobs/queries (`INTERRUPTED`/`FAILED`/`CANCELLED`) without leaving them `RUNNING`.
+   - Replaced per-attempt `ThreadPoolExecutor` workers (whose `atexit` handler blocks process shutdown on hung threads) with tracked, bounded daemon workers for both DNS resolution (`_resolve_public_host_bounded` / `active_resolver_worker_count` / `shutdown_resolver_workers`) and source execution (`active_discovery_worker_count` / `shutdown_discovery_workers`). If a DNS lookup or source call times out without cooperating with `register_abort`, the wedged worker remains tracked (`active_discovery_worker_count() == 1`), blocks further retry/job admission (`SOURCE_UNAVAILABLE`) so untracked threads never accumulate, and `shutdown_discovery_workers` honestly reports `{"drained": False, "remaining": 1}` until the thread actually exits.
+5. **Process-wide source rate limiting and `Retry-After` enforcement (`src/mi_boti/discovery/overpass.py`):**
+   - Shared concurrency (`max_concurrency = 1`), minimum interval (`min_interval_seconds >= 10`), and `Retry-After` backoff state across all `OverpassDiscoveryAdapter` instances via `_GLOBAL_SOURCE_RATES`. Preserves and honors `Retry-After` (delta-seconds or HTTP-date) within remaining job deadlines and budgets.
+
+Executed verification on Windows / CPython 3.14.6:
+
+```text
+.venv\Scripts\python.exe -m pytest -q
+474 passed, 37 warnings in 16.83s
+.venv\Scripts\python.exe -m compileall -q src tests
+Exit 0
+.venv\Scripts\python.exe -m pip check
+No broken requirements found.
+.venv\Scripts\python.exe scripts/check_phase2_prerequisites.py
+Exit 0; local_checkpoint_passed=true, full_phase2_accepted=false
+```
+
+Phase 3 is **not** marked complete while `D12` (approved discovery source policy) and `L03` (live verification against a permitted source) remain open.
+
+## Approved Philippines extract importer and live L03 verification — 2026-11-14
+
+Implemented [docs/PHILIPPINES-EXTRACT-PLAN.md](PHILIPPINES-EXTRACT-PLAN.md) after the project owner approved Geofabrik's public Philippines regional OpenStreetMap extract (`https://download.geofabrik.de/asia/philippines-latest.osm.pbf`, official region page `https://download.geofabrik.de/asia/philippines.html`, ODbL license `https://www.openstreetmap.org/copyright`) as the Phase 3 discovery source direction:
+
+1. **Optional parser dependency (`osmium==4.3.2`):**
+   - Pinned `osmium==4.3.2` (PyOsmium, BSD 2-Clause) under `[project.optional-dependencies] discovery` in `pyproject.toml` and `requirements-py314-windows.txt`.
+   - Installed and verified the prebuilt `osmium-4.3.2-cp314-cp314-win_amd64.whl` wheel on Windows / CPython 3.14.6 via `--only-binary=:all:` without compiling native code.
+2. **Explicit bounded download, subprocess-isolated PBF import, immutable snapshot generations, and deferred cursor acknowledgement (`src/mi_boti/discovery/philippines_extract.py`, `src/mi_boti/jobs/discovery.py`, `src/mi_boti/__main__.py`):**
+   - Added `download_and_import_philippines_extract`, `import_pbf_to_snapshot`, `resolve_active_snapshot_generation`, `verify_local_snapshot`, `PhilippinesExtractAdapter`, and explicit CLI commands `import-ph-extract` and `verify-ph-extract`.
+   - Enforced HTTPS-only allowlisted redirects (`<=3` hops on `download.geofabrik.de`), SSRF IP pinning (`resolve_public_host` + `format_pinned_url` + `Host` header + `sni_hostname`), process-wide rate limiting (`min_interval_seconds >= 10`, `max_concurrency = 1`), streaming size caps (`<=1 GiB`), provider MD5 error-detection verification (explicitly documented as error detection, not a cryptographic signature), and local SHA-256 verification (`pbf_sha256` and `snapshot_db_sha256`).
+   - Substantiated bounded parser isolation: `import_pbf_to_snapshot(..., isolate_process=True)` and the `import-ph-extract --pbf-file` CLI path enforce a finite monotonic deadline (`monotonic() + max(policy["timeout_seconds"], 1.0)`) and execute native PyOsmium (`osmium==4.3.2`) PBF parsing inside a child subprocess (`_parse_pbf_in_isolated_subprocess`), killing the child process (`proc.kill()`) immediately on timeout or cancellation without stalling the parent process or corrupting the active snapshot.
+   - Streamed `amenity=cafe|restaurant` POIs via `osmium.FileProcessor` + `TagFilter`, resolved `way` and `relation` (`type=multipolygon|site|building`) geometry in a temporary disk-backed SQLite scratch database under `tmp/extract_import_<uuid>/`, labelled derived `way`/`relation` centroids `"approximate": True` with an explicit limitation note, recorded `incomplete_geometry` / `unsupported_relations` / `truncated_by_cap` counts (`incomplete_snapshot = true` prevents `EXHAUSTED` coverage claims), and preserved distinct `observed_at` (extract data timestamp) versus `local_queried_at` (query time).
+   - Published each verified snapshot into an immutable generation directory `datasets/philippines/generations/<snapshot_id>/` containing its matching `snapshot.sqlite3` and `manifest.json`, serialized concurrent imports/publications via `datasets/philippines/publish.lock` (`DeploymentLock`), verified the generation directory (`_verify_generation_dir`), and switched a single active-generation pointer `datasets/philippines/active_generation.json` via `_replace_file_with_sharing_retry` (recovering from transient Windows `PermissionError` / `WinError 5` / `32` / `33` sharing conflicts under concurrent readers within bounded attempts, while cleaning up the unpublished generation directory and preserving the previous verified generation on failure).
+   - Decoupled page fetching from durable cursor advancement across `mi_boti.sqlite3` and `datasets/philippines/cursors.sqlite3`, binding cursors and `checkpoint_token`s to the immutable generation ID (`snapshot_id`) as well as `snapshot_sha256`: `PhilippinesExtractAdapter.discover()` does not mutate `cursors.sqlite3`, resets `last_ord` to `0` whenever `snapshot_id` changes (even if identical PBF bytes are reimported with changed filtering or index caps), and returns `DiscoveryBatch(..., checkpoint_token=checkpoint_token)`. `execute_manual_discovery_job` and `execute_manual_discovery_job_async` invoke `source.acknowledge_checkpoint(checkpoint_token)` **only after** `resolve()`, `finish_discovery_query()`, and `jobs.progress_json` are durably committed in `mi_boti.sqlite3` under valid authorization and lease ownership. `acknowledge_checkpoint()` coordinates with `publish.lock` to prevent racing an in-flight pointer switch, validates both `snapshot_id` and `snapshot_sha256`, and advances `last_ord` monotonically under `BEGIN IMMEDIATE`. Unacknowledged pages replay safely through deduplication (`existing` count incremented, zero records skipped or duplicated).
+   - Kept production discovery disabled in configuration (`src/mi_boti/config.py` rejects `enabled = true` on all sources and providers, and `config.example.toml` keeps `enabled = false`).
+3. **Executed automated suite (`tests/integration/test_philippines_extract.py` and full suite):**
+   - Added 12 comprehensive automated tests in `tests/integration/test_philippines_extract.py` covering policy validation, MD5 sidecar parsing, synthetic PBF `node`/`way`/`relation` import, approximate centroid labelling, incomplete geometry and unsupported relation handling, redirect validation, MD5/corrupt PBF rejection preserving the prior verified snapshot, multi-page cursor progression across capped `/discover` runs, snapshot refresh cursor reset, duplicate-only repeat queries, exhausted daily request budgets, no startup execution on `initialize(settings)`, fail-closed config rejection of `enabled = true`, failure injection between generation write and `active_generation.json` pointer switch, transient/persistent Windows sharing-conflict recovery during pointer switch, multi-reader concurrent reads during publication (verified across 10 consecutive repeat runs), serialized concurrent import/publication via `publish.lock`, deferred cursor acknowledgement across cancellation/authorization loss/post-commit crash/competing jobs/snapshot changes, reimporting identical PBF bytes with changed filtering/index caps (`snapshot_id` cursor binding and stale checkpoint rejection), and subprocess-isolated PBF parsing with `--pbf-file` deadline enforcement.
+
+```text
+.venv\Scripts\python.exe -m pytest -q
+486 passed, 37 warnings in 34.31s
+.venv\Scripts\python.exe -m compileall -q src tests
+Exit 0
+.venv\Scripts\python.exe -m pip check
+No broken requirements found.
+.venv\Scripts\python.exe scripts/check_phase2_prerequisites.py
+Exit 0; local_checkpoint_passed=true, full_phase2_accepted=false
+counts: resources=16, command_channels=21, output_destinations=9, panels=4, jobs=0, hunts=0
+```
+
+4. **Executed live `L03` discovery verification against the real Geofabrik Philippines extract:**
+   - Downloaded `https://download.geofabrik.de/asia/philippines-latest.osm.pbf` (redirected to `https://download.geofabrik.de/asia/philippines-261113.osm.pbf`) and its `.md5` sidecar into a disposable SQLite workspace, imported the national extract into `datasets/philippines/snapshot.sqlite3`, and ran three Quezon City fixture discovery jobs (`bbox = [14.648, 121.047, 14.657, 121.061]`, `cafe` + `restaurant`):
+
+```json
+{
+  "gate": "L03_DISCOVERY_EXTRACT",
+  "provider_url": "https://download.geofabrik.de/asia/philippines-latest.osm.pbf",
+  "final_download_url": "https://download.geofabrik.de/asia/philippines-261113.osm.pbf",
+  "downloaded_at": "2026-11-14T12:23:11.897895Z",
+  "snapshot_observed_at": "2026-11-13T21:22:20.000000Z",
+  "pbf_bytes": 613918681,
+  "provider_md5": "690772965227a78819ee413182ee38ba",
+  "pbf_sha256": "aaf01a39336ff80a049935c66199f3786f2ece65a2f056e9ebf350f60ec191c7",
+  "snapshot_db_bytes": 10465280,
+  "snapshot_db_sha256": "daa61c85ac37f29d679ba69d28c374620ddfddf66f410b9406bc215eeb3b1871",
+  "parser": "pyosmium==4.3.2",
+  "policy_version": "geofabrik-ph-2026-11",
+  "attribution": "© OpenStreetMap contributors — ODbL; https://www.openstreetmap.org/copyright",
+  "download_seconds": 69.79,
+  "import_seconds": 35.25,
+  "national_counts": {
+    "nodes_indexed": 22486,
+    "ways_indexed": 3563,
+    "relations_indexed": 48,
+    "approximate_centroids": 3611,
+    "incomplete_geometry": 1,
+    "unsupported_relations": 0,
+    "skipped_invalid_tags": 0,
+    "truncated_by_cap": 0
+  },
+  "incomplete_snapshot": true,
+  "limitations": [
+    "1 OSM element(s) had missing or incomplete geometry."
+  ],
+  "qc_fixture_bbox": [14.648, 121.047, 14.657, 121.061],
+  "query_1_page_1": {
+    "state": "SUCCEEDED",
+    "elapsed_seconds": 0.4917,
+    "dispositions": {
+      "seen": 25,
+      "new": 24,
+      "existing": 0,
+      "ambiguous": 0,
+      "invalid": 1,
+      "discovery_requests": 1,
+      "phase": "COMPLETED"
+    }
+  },
+  "query_2_page_2_cursor": {
+    "state": "SUCCEEDED",
+    "elapsed_seconds": 0.1949,
+    "dispositions": {
+      "seen": 7,
+      "new": 6,
+      "existing": 0,
+      "ambiguous": 0,
+      "invalid": 1,
+      "discovery_requests": 1,
+      "phase": "COMPLETED"
+    }
+  },
+  "query_3_repeat_page_1": {
+    "state": "SUCCEEDED",
+    "elapsed_seconds": 0.3548,
+    "dispositions": {
+      "seen": 25,
+      "new": 0,
+      "existing": 24,
+      "ambiguous": 0,
+      "invalid": 1,
+      "discovery_requests": 1,
+      "phase": "COMPLETED"
+    }
+  },
+  "disposable_db_totals": {
+    "businesses": 30,
+    "open_identity_reviews": 0,
+    "hunt_credits": 0,
+    "coverage_state": "PARTIAL"
+  }
+}
+```
+
+5. **Remaining limitations and gate status:**
+   - The Philippines OSM regional extract discovery source direction (`D12` for Phase 3 discovery), recovery requirements (immutable snapshot generations, deferred cross-database cursor acknowledgement, and subprocess-isolated PBF parsing), and live `L03` discovery subset are now verified.
+   - Production discovery remains disabled in configuration (`src/mi_boti/config.py` rejects `enabled = true` on all sources and providers, and `config.example.toml` keeps `[sources.philippines_extract] enabled = false`).
+   - Full Phase 2 (`L01` remaining live cases) and full Phase 3 (Discord identity-review resolution UI and live Discord `/campaign` + `/discover` walkthrough) remain tracked before claiming full P2/P3 completion.
+   - Phase 4a website research policies (`D12` website sources), AI provider verification (`D11`/`L02`), Phase 4b scoring, and Phase 5 autonomous hunting remain disabled.
+
+## Codex checkpoint-lock and DNS-test fixes — 2026-11-14
+
+Applied the requested follow-up to the current uncommitted Phase 3 implementation. `PhilippinesExtractAdapter.acknowledge_checkpoint()` now calls `DeploymentLock(...).acquire()` before validating the active generation or writing its cursor, and releases ownership in its existing finally block. The new lock-contention regression holds the actual OS publication lock through a distinct owner, proves acknowledgement returns False within its bounded wait without inserting a cursor, then verifies the same token can commit after release and that acknowledgement releases the lock afterward.
+
+The stalled-DNS regression no longer depends on the OS scheduling a new source and resolver thread within a 100 ms attempt budget. It gives the fixture a unique source/limiter key, explicitly establishes a resolver blocked on a test-controlled event, cancels and joins the initiating probe, then verifies sync/async job admission remains blocked, no second resolver starts, strict timeout selection remains unchanged and shutdown truthfully reports outstanding work. Cleanup releases the resolver in finally and inspects only this fixture's worker state rather than unrelated global workers. Separate existing tests continue to cover actual request deadlines and late-response rejection; production timeout behavior was not relaxed.
+
+Executed verification:
+
+```text
+Focused lock-contention and stalled-DNS regressions:
+2 passed in 3.16s
+Five separate consecutive stalled-DNS regression invocations:
+1 passed in 0.42s
+1 passed in 0.55s
+1 passed in 0.89s
+1 passed in 0.76s
+1 passed in 0.62s
+.venv\Scripts\python.exe -m pytest -q
+487 passed, 37 warnings in 31.14s
+```
+
+The warnings remain existing discord.py deprecations. Changed application/test files: src/mi_boti/discovery/philippines_extract.py, tests/integration/test_philippines_extract.py and tests/integration/test_discovery_worker.py. This ledger and DEVELOPMENT-HANDOFF.md were updated with the results. No production data or Discord resources were modified, no source download/probe was performed and discovery/AI/hunting enablement was not changed. Other Antigravity work remains uncommitted; this follow-up does not claim full P2/P3 acceptance or replace the remaining live workflow/review-UI gates.

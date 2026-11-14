@@ -8,7 +8,8 @@ Versions use MAJOR.MINOR.PATCH with annotated v tags. Releases before 1.0 are de
 
 - Add normalized public observations, transactional global identity reservations, ambiguity holds and cross-query review reuse with immutable origin ownership.
 - Add a bounded fixture query planner and offline Overpass JSON parser; test separate-connection duplicate races, all dispositions, branch distinctions, provenance and stale-worker rejection.
-- Record the Quezon City restaurant/cafe fixture and failed one-request source probe. Live discovery and AI/hunting remain disabled; source, campaign and worker integration are unfinished.
+- Add versioned non-AI PH campaign validation/storage (`/campaign create|list|edit` and `active_campaign_id` via `/config set`), durable query/attempt/coverage lifecycle (`FRESH`, `EXHAUSTED`, `PARTIAL`) with request budgets, bounded manual discovery job admission/leases/worker/recovery (`/discover`) with non-blocking async execution, periodic lease heartbeats and fresh per-step authorization, and identity-review/hierarchy resolution with cycle prevention.
+- Implement `OverpassDiscoveryAdapter` with pinned-IP SSRF connections (preserving `Host` and TLS `sni_hostname`), mixed-DNS/IPv4-mapped IPv6 rejection, and process-wide rate limiting (`>=10s`, concurrency `1`, `Retry-After` enforcement). Reject `/api/0.6/map.json` per OSM editing API policy; keep live discovery (`D12`/`L03`) and AI/hunting (`D11`/`L02`) disabled until their gates pass.
 
 ### Verification tooling
 

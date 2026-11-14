@@ -125,6 +125,8 @@ def _dynamic(section: dict, allowed: frozenset, *, source: bool) -> Mapping:
             raise ConfigurationError("Unknown provider/source configuration structure.")
         if type(options.get("enabled", False)) is not bool:
             raise ConfigurationError("Provider/source enabled must be boolean.")
+        if options.get("enabled"):
+            raise ConfigurationError("Provider/source execution is not implemented or verified; keep enabled=false.")
         for key, value in options.items():
             if key == "enabled":
                 continue
@@ -166,8 +168,6 @@ def _dynamic(section: dict, allowed: frozenset, *, source: bool) -> Mapping:
         if source and options.get("endpoint") and options.get("allowed_hosts"):
             if urlsplit(options["endpoint"]).hostname not in options["allowed_hosts"]:
                 raise ConfigurationError("Source endpoint is outside its host allowlist.")
-        if options.get("enabled"):
-            raise ConfigurationError("Provider/source execution is not implemented or verified; keep enabled=false.")
         result[identifier] = _freeze(options)
     return MappingProxyType(result)
 

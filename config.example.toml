@@ -17,5 +17,43 @@ trust_env_proxy = false
 [mcp]
 enabled = false
 
-# Provider/source activation is unavailable in Phase 1. No jobs, network
-# requests, CLI model tasks, or Discord connections are launched by this file.
+# Discovery sources remain disabled until importer tests and L03 live verification pass.
+# The owner approved the Geofabrik Philippines regional OSM extract as the Phase 3 discovery source direction.
+[sources.philippines_extract]
+enabled = false
+endpoint = "https://download.geofabrik.de/asia/philippines-latest.osm.pbf"
+allowed_hosts = ["download.geofabrik.de"]
+permission_url = "https://download.geofabrik.de/asia/philippines.html"
+license_url = "https://www.openstreetmap.org/copyright"
+attribution = "© OpenStreetMap contributors — ODbL; https://www.openstreetmap.org/copyright"
+policy_version = "geofabrik-ph-2026-11"
+reviewed_at = "2026-11-14T00:00:00Z"
+review_expires_at = "2027-11-14T00:00:00Z"
+user_agent = "MiBoti/0.2 (+https://github.com/manwelAC/mi-boti)"
+allowed_tags = ["cafe", "restaurant"]
+min_interval_seconds = 10
+max_concurrency = 1
+timeout_seconds = 600
+max_response_bytes = 1073741824
+max_attempts = 2
+max_requests_per_day = 25
+
+# Public Overpass and the OSM editing API (/api/0.6/map.json) are not approved for production discovery.
+[sources.overpass]
+enabled = false
+endpoint = "https://overpass-api.de/api/interpreter"
+allowed_hosts = ["overpass-api.de"]
+permission_url = "https://dev.overpass-api.de/overpass-doc/en/preface/commons.html"
+license_url = "https://www.openstreetmap.org/copyright"
+attribution = "© OpenStreetMap contributors — ODbL; https://www.openstreetmap.org/copyright"
+policy_version = "overpass-2026-11"
+reviewed_at = "2026-11-14T00:00:00Z"
+review_expires_at = "2027-11-14T00:00:00Z"
+user_agent = "MiBoti/0.2 (+https://github.com/manwelAC/mi-boti)"
+allowed_tags = ["cafe", "restaurant"]
+min_interval_seconds = 10
+max_concurrency = 1
+timeout_seconds = 25
+max_response_bytes = 5242880
+max_attempts = 3
+max_requests_per_day = 50

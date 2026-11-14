@@ -44,8 +44,8 @@ The foundation and Discord integration are implemented. Live checks have confirm
 | :--- | :--- |
 | Foundation | Implemented: configuration, private storage, logging, migrations and backup primitives |
 | Discord workspace | Implemented: private channels, authorization, confirmed provisioning and persistent panels |
-| Verification | **404 automated tests passed** on Windows / CPython 3.14.6; 16 upstream SDK warnings remain |
-| Discovery & registry | In progress: offline parser/planner and transactional registry; live source and Discord workflows remain disabled |
+| Verification | **486 automated tests passed** on Windows / CPython 3.14.6; 37 upstream SDK warnings remain |
+| Discovery & registry | Implemented & L03 verified: regional Geofabrik Philippines OSM extract importer (`pyosmium==4.3.2`) with subprocess-isolated parsing and immutable generation pointers, local SQLite snapshot adapter (`PhilippinesExtractAdapter`), transactional registry, versioned non-AI campaigns, deferred cross-database cursor acknowledgement, bounded worker & review resolution; production discovery stays disabled (`enabled = false` enforced) |
 | Research & CRM | Planned for the non-AI MVP |
 | AI & autonomous hunting | Disabled until a provider passes real compatibility and allowance verification |
 
@@ -140,7 +140,7 @@ The decision log is the central record of mandatory choices, technical recommend
 | **PROPOSED** | A consistent technical baseline awaiting owner revision or approval; not a verified third-party capability |
 | **OPEN** | Deployment-owner input or feasibility evidence is still required before enabling the affected feature |
 
-The remaining OPEN inputs are **D11: verified AI provider**, **D12: approved discovery sources**, and **D13: Discord deployment identity and credentials**. D00 covers unspecified implementation details rather than repeating disclaimers in every document.
+The remaining OPEN inputs are **D11: verified AI provider**, **D12: website research policies (Phase 4a)** — while the Philippines OSM regional extract discovery source direction is owner-approved (`FINAL` per [docs/PHILIPPINES-EXTRACT-PLAN.md](docs/PHILIPPINES-EXTRACT-PLAN.md)) and verified under `L03` — and **D13: Discord deployment identity and credentials**. D00 covers unspecified implementation details rather than repeating disclaimers in every document.
 
 <details>
 <summary><strong>Read the complete decision log · D00–D15</strong></summary>
@@ -159,7 +159,7 @@ The remaining OPEN inputs are **D11: verified AI provider**, **D12: approved dis
 | D09 | MVP is setup, command restrictions, discovery, global registry/dedup, non-AI website research/evidence (4a), CRM and manual drafts | FINAL | Project owner | [MVP sequence](docs/21-DEVELOPMENT-ROADMAP.md) |
 | D10 | If no provider passes L02, release phases 1–3, 4a and non-AI phase 6; all AI features visibly disabled; Phase 4b and hunting unreleased | FINAL | Project owner | [Phase 0 gate](docs/21-DEVELOPMENT-ROADMAP.md) |
 | D11 | Select a subscription CLI/backend/model only after its real L02 gate passes; none currently verified | OPEN | Deployment owner with Phase 0 evidence | [Provider procedure](docs/10-AI-PROVIDER-INTEGRATION.md) |
-| D12 | Select permitted discovery endpoints/directories and approve their current policies, daily budgets and attribution | OPEN | Deployment owner | [Discovery](docs/08-BUSINESS-DISCOVERY.md), [source settings](docs/23-IMPLEMENTATION-GUIDELINES.md) |
+| D12 | Regional Philippines OSM extract (`philippines-latest.osm.pbf` from Geofabrik) is owner-approved (`FINAL`) and `L03`-verified as the Phase 3 discovery source ([plan](docs/PHILIPPINES-EXTRACT-PLAN.md)); website research policies and Overpass/directory sources remain `OPEN` | FINAL (PH extract) / OPEN (other sources) | Project owner / Deployment owner | [Extract plan](docs/PHILIPPINES-EXTRACT-PLAN.md), [Discovery](docs/08-BUSINESS-DISCOVERY.md), [source settings](docs/23-IMPLEMENTATION-GUIDELINES.md) |
 | D13 | Supply allowed guild/owner IDs, operator roles, private channel policy and bot credentials locally | OPEN | Deployment owner | [Setup](docs/06-DISCORD-SERVER-ARCHITECTURE.md), [configuration](docs/23-IMPLEMENTATION-GUIDELINES.md) |
 | D14 | Marker-based publication reconciliation/UNCERTAIN delivery, future MCP interface, and expanded backup manifests follow the working MVP; basic safety remains mandatory | FINAL | Project owner | [Post-MVP work](docs/21-DEVELOPMENT-ROADMAP.md) |
 | D15 | The initial target market is the Philippines (country code PH); any sample city/category used for feasibility is a test fixture, not a campaign decision | FINAL | Project owner | [Discovery scope and probe](docs/08-BUSINESS-DISCOVERY.md) |

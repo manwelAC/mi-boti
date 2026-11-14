@@ -88,5 +88,33 @@ def test_disabled_dynamic_profiles_remain_immutable(configured):
     path.write_text('[sources.overpass]\nenabled=false\nallowed_hosts=["overpass-api.de"]\nendpoint="https://overpass-api.de/api/interpreter"', encoding="utf-8")
     settings = load_settings(env)
     assert settings.sources["overpass"]["enabled"] is False
+    assert settings.safe_summary()["discovery_enabled"] is False
     with pytest.raises(TypeError):
         settings.sources["overpass"]["enabled"] = True
+
+
+def test_source_enablement_remains_rejected_while_d12_and_l03_are_open(configured):
+    env, path = configured
+    path.write_text(
+        '[sources.overpass]\n'
+        'enabled = true\n'
+        'endpoint = "https://overpass-api.de/api/interpreter"\n'
+        'allowed_hosts = ["overpass-api.de"]\n'
+        'permission_url = "https://dev.overpass-api.de/overpass-doc/en/preface/commons.html"\n'
+        'license_url = "https://www.openstreetmap.org/copyright"\n'
+        'attribution = "© OpenStreetMap contributors"\n'
+        'policy_version = "overpass-2026-11"\n'
+        'reviewed_at = "2026-11-14T00:00:00Z"\n'
+        'review_expires_at = "2027-11-14T00:00:00Z"\n'
+        'user_agent = "MiBoti/0.2 (+https://github.com/manwelAC/mi-boti)"\n'
+        'allowed_tags = ["cafe", "restaurant"]\n'
+        'min_interval_seconds = 10\n'
+        'max_concurrency = 1\n'
+        'timeout_seconds = 20\n'
+        'max_response_bytes = 1048576\n'
+        'max_attempts = 3\n'
+        'max_requests_per_day = 50\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(ConfigurationError, match="keep enabled=false"):
+        load_settings(env)

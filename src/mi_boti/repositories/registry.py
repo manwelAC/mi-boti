@@ -137,3 +137,256 @@ def resolve(db, query_id, observation, lease_token, *, now=None, similarity_thre
             connection.execute("INSERT INTO business_events VALUES (?,?,?,?,?,?)", (str(uuid4()), business_id, job["actor_id"], "discovery.observed",
                 encoded({"candidate_id": candidate_id, "query_id": query_id, "state": state, "source_url": observation["source_url"], "source_identifier": observation["source_namespace"]+":"+observation["source_id"], "observed_at": observation["observed_at"], "policy_version": observation["policy_version"], "attribution": observation["attribution"]}), now))
         return Resolution(candidate_id, state, business_id, review_id)
+
+
+def _check_parent_link(connection, business_id: str, parent_id: str | None) -> None:
+    if parent_id is None:
+        return
+    if not isinstance(parent_id, str) or parent_id == business_id:
+        raise RegistryError("A business cannot be its own parent.")
+    cursor = parent_id
+    visited = {business_id}
+    depth = 0
+    while cursor is not None:
+        if cursor in visited or depth > 32:
+            raise RegistryError("Parent linkage would create a cycle in the business hierarchy.")
+        visited.add(cursor)
+        row = connection.execute("SELECT parent_id, entity_kind FROM businesses WHERE id=?", (cursor,)).fetchone()
+        if row is None:
+            raise RegistryError("Selected parent business does not exist.")
+        cursor = row["parent_id"]
+        depth += 1
+
+
+def resolve_identity_review(
+    db,
+    review_id: str,
+    actor_id: str,
+    *,
+    action: str,
+    rationale: str,
+    target_business_id: str | None = None,
+    expected_business_revision: int | None = None,
+    entity_kind: str = "BUSINESS",
+    parent_id: str | None = None,
+    now: str | None = None,
+) -> Resolution:
+    """Resolve an OPEN identity review with a named actor and audit rationale.
+
+    Never automatically merges two existing businesses and never creates leads,
+    scores, AI tasks or retroactive hunt quota credits.
+    """
+    from ..domain.campaigns import parse_utc, validate_actor, validate_rationale
+
+    actor = validate_actor(actor_id)
+    cleaned_rationale = validate_rationale(rationale)
+    stamp = now or utc_now()
+    parse_utc(stamp)
+    if action not in {"LINK_EXISTING", "CREATE_NEW"}:
+        raise RegistryError("Identity review resolution action must be LINK_EXISTING or CREATE_NEW.")
+    if entity_kind not in {"BUSINESS", "PARENT", "BRANCH"}:
+        raise RegistryError("Business entity kind must be BUSINESS, PARENT or BRANCH.")
+    if action == "LINK_EXISTING":
+        if not isinstance(target_business_id, str) or not target_business_id.strip():
+            raise RegistryError("LINK_EXISTING requires a target_business_id.")
+        if type(expected_business_revision) is not int or expected_business_revision < 1:
+            raise RegistryError("LINK_EXISTING requires a positive expected_business_revision.")
+    elif target_business_id is not None:
+        raise RegistryError("CREATE_NEW does not accept a target_business_id.")
+    with db.transaction() as connection:
+        review = connection.execute("SELECT * FROM identity_reviews WHERE id=?", (review_id,)).fetchone()
+        if not review or review["state"] != "OPEN":
+            raise RegistryError("Identity review was not found or is already resolved.")
+        candidate = connection.execute("SELECT * FROM candidates WHERE id=?", (review["candidate_id"],)).fetchone()
+        if not candidate or candidate["state"] != "AMBIGUOUS":
+            raise RegistryError("Review candidate is not in AMBIGUOUS state.")
+        query = connection.execute("SELECT * FROM discovery_queries WHERE id=?", (candidate["query_id"],)).fetchone()
+        observation = json.loads(candidate["observation_json"])
+        identity = normalize(observation)
+        if action == "LINK_EXISTING":
+            target = connection.execute("SELECT * FROM businesses WHERE id=?", (target_business_id,)).fetchone()
+            if not target:
+                raise RegistryError("Selected target business does not exist.")
+            if target["revision"] != expected_business_revision:
+                raise RegistryError("Target business revision changed; reload before resolving identity review.")
+            if parent_id is not None:
+                _check_parent_link(connection, target_business_id, parent_id)
+            _remember(connection, target_business_id, identity, stamp)
+            next_parent = target["parent_id"] if parent_id is None else parent_id
+            connection.execute(
+                "UPDATE businesses SET parent_id=?, updated_at=?, revision=revision+1 WHERE id=?",
+                (next_parent, stamp, target_business_id),
+            )
+            business_id = target_business_id
+            candidate_state = "RESOLVED_EXISTING"
+        else:
+            for claim in identity.claims:
+                existing = connection.execute("SELECT business_id FROM identity_claims WHERE claim_key=?", (claim,)).fetchone()
+                if existing:
+                    raise RegistryError("A strong identity claim is already owned by an existing business; use LINK_EXISTING.")
+            business_id = str(uuid4())
+            if parent_id is not None:
+                _check_parent_link(connection, business_id, parent_id)
+            connection.execute(
+                "INSERT INTO businesses(id,name,normalized_name,address_json,normalized_address,country_code,parent_id,entity_kind,disposition,origin_job_id,origin_hunt_id,created_at,updated_at,revision) "
+                "VALUES (?,?,?,?,?,?,?,?,'PENDING',?,?,?,?,1)",
+                (
+                    business_id,
+                    observation["name"],
+                    identity.name,
+                    encoded(observation.get("address", {})),
+                    identity.address,
+                    identity.country,
+                    parent_id,
+                    entity_kind,
+                    query["job_id"],
+                    query["hunt_id"],
+                    stamp,
+                    stamp,
+                ),
+            )
+            _remember(connection, business_id, identity, stamp)
+            candidate_state = "RESOLVED_NEW"
+        resolution_payload = encoded(
+            {
+                "schema_version": 1,
+                "action": action,
+                "business_id": business_id,
+                "rationale": cleaned_rationale,
+            }
+        )
+        connection.execute(
+            "UPDATE identity_reviews SET state='RESOLVED', resolution=?, actor_id=?, resolved_at=? WHERE id=?",
+            (resolution_payload, actor, stamp, review_id),
+        )
+        # Update the primary candidate and any duplicate AMBIGUOUS candidates that reused this review.
+        linked_candidates = connection.execute(
+            "SELECT id, resolution_json FROM candidates WHERE state='AMBIGUOUS' AND (id=? OR observation_key=?)",
+            (candidate["id"], candidate["observation_key"]),
+        ).fetchall()
+        for row in linked_candidates:
+            res = json.loads(row["resolution_json"] or "{}")
+            if row["id"] != candidate["id"] and res.get("review_id") != review_id:
+                continue
+            res.update(
+                review_id=review_id,
+                resolved_by=actor,
+                resolved_at=stamp,
+                resolution_action=action,
+                rationale=cleaned_rationale,
+            )
+            connection.execute(
+                "UPDATE candidates SET state=?, business_id=?, resolution_json=? WHERE id=?",
+                (candidate_state, business_id, encoded(res), row["id"]),
+            )
+        connection.execute(
+            "INSERT INTO business_events VALUES (?,?,?,?,?,?)",
+            (
+                str(uuid4()),
+                business_id,
+                actor,
+                "identity.review_resolved",
+                encoded(
+                    {
+                        "review_id": review_id,
+                        "candidate_id": candidate["id"],
+                        "action": action,
+                        "state": candidate_state,
+                        "rationale": cleaned_rationale,
+                        "parent_id": parent_id,
+                    }
+                ),
+                stamp,
+            ),
+        )
+        connection.execute(
+            "INSERT INTO audit_events VALUES (?,?,?,?,?,?,?,?,?)",
+            (
+                str(uuid4()),
+                str(uuid4()),
+                actor,
+                "identity.review_resolve",
+                "identity_review",
+                review_id,
+                "SUCCESS",
+                encoded({"action": action, "business_id": business_id, "candidate_state": candidate_state}),
+                stamp,
+            ),
+        )
+        return Resolution(candidate["id"], candidate_state, business_id, review_id)
+
+
+def link_parent_business(
+    db,
+    business_id: str,
+    parent_id: str | None,
+    actor_id: str,
+    *,
+    expected_revision: int,
+    entity_kind: str | None = None,
+    rationale: str,
+    now: str | None = None,
+) -> dict:
+    """Transactionally link or clear a parent business with cycle detection and revision checks."""
+    from ..domain.campaigns import parse_utc, validate_actor, validate_rationale
+
+    actor = validate_actor(actor_id)
+    cleaned_rationale = validate_rationale(rationale)
+    stamp = now or utc_now()
+    parse_utc(stamp)
+    if type(expected_revision) is not int or expected_revision < 1:
+        raise RegistryError("Expected business revision must be a positive integer.")
+    if entity_kind is not None and entity_kind not in {"BUSINESS", "PARENT", "BRANCH"}:
+        raise RegistryError("Business entity kind must be BUSINESS, PARENT or BRANCH.")
+    with db.transaction() as connection:
+        row = connection.execute("SELECT * FROM businesses WHERE id=?", (business_id,)).fetchone()
+        if not row:
+            raise RegistryError("Business was not found.")
+        if row["revision"] != expected_revision:
+            raise RegistryError("Business revision changed; reload the current record before updating hierarchy.")
+        _check_parent_link(connection, business_id, parent_id)
+        next_kind = entity_kind if entity_kind is not None else ("BRANCH" if parent_id is not None else row["entity_kind"])
+        if parent_id is not None:
+            parent_row = connection.execute("SELECT * FROM businesses WHERE id=?", (parent_id,)).fetchone()
+            if parent_row["entity_kind"] == "BUSINESS":
+                connection.execute(
+                    "UPDATE businesses SET entity_kind='PARENT', updated_at=?, revision=revision+1 WHERE id=?",
+                    (stamp, parent_id),
+                )
+        connection.execute(
+            "UPDATE businesses SET parent_id=?, entity_kind=?, updated_at=?, revision=revision+1 WHERE id=?",
+            (parent_id, next_kind, stamp, business_id),
+        )
+        connection.execute(
+            "INSERT INTO business_events VALUES (?,?,?,?,?,?)",
+            (
+                str(uuid4()),
+                business_id,
+                actor,
+                "identity.hierarchy_updated",
+                encoded(
+                    {
+                        "previous_parent_id": row["parent_id"],
+                        "parent_id": parent_id,
+                        "entity_kind": next_kind,
+                        "rationale": cleaned_rationale,
+                    }
+                ),
+                stamp,
+            ),
+        )
+        connection.execute(
+            "INSERT INTO audit_events VALUES (?,?,?,?,?,?,?,?,?)",
+            (
+                str(uuid4()),
+                str(uuid4()),
+                actor,
+                "identity.hierarchy_update",
+                "business",
+                business_id,
+                "SUCCESS",
+                encoded({"parent_id": parent_id, "entity_kind": next_kind}),
+                stamp,
+            ),
+        )
+        return dict(connection.execute("SELECT * FROM businesses WHERE id=?", (business_id,)).fetchone())

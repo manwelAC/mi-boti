@@ -12,7 +12,7 @@ from ..domain.errors import StorageError
 
 DATA_CHILDREN = frozenset({
     "mi_boti.sqlite3", "mi_boti.sqlite3-wal", "mi_boti.sqlite3-shm", "mi_boti.sqlite3-journal",
-    "deployment.lock", "artifacts", "backups", "exports", "logs", "tmp", "verification",
+    "deployment.lock", "artifacts", "backups", "datasets", "exports", "logs", "tmp", "verification",
 })
 
 
@@ -84,7 +84,7 @@ def prepare_data_root(path: Path, *, minimum_mib: int = 500) -> Path:
         absolute.mkdir(parents=True, exist_ok=True, mode=0o700)
         _restrict_permissions(absolute)
         ensure_disk_space(absolute, minimum_mib)
-        for folder in ("artifacts", "backups", "exports", "logs", "tmp", "verification"):
+        for folder in ("artifacts", "backups", "datasets", "exports", "logs", "tmp", "verification"):
             confined(absolute, folder).mkdir(exist_ok=True, mode=0o700)
         return absolute
     except OSError:
