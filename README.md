@@ -79,6 +79,7 @@ The numbered specifications describe the full target product; they do not imply 
 
 | Reference | Purpose |
 | :--- | :--- |
+| [Development handoff](DEVELOPMENT-HANDOFF.md) | Implementation snapshot and onboarding for development tools |
 | [Overview](docs/00-PROJECT-OVERVIEW.md) | Product scope and vocabulary |
 | [Roadmap](docs/21-DEVELOPMENT-ROADMAP.md) | Milestones, dependencies and release gates |
 | [Acceptance ledger](docs/22-ACCEPTANCE-CRITERIA.md) | Executed checks, live evidence and limitations |
