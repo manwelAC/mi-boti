@@ -12,7 +12,7 @@ Names are display defaults only. Stable keys map to persisted snowflake IDs.
 
 | Category key / display name | Channel keys / default names |
 |---|---|
-| control_center / Control Center | dashboard, bot-control, subscription-usage |
+| control_center / Control Center | guide, dashboard, bot-control, subscription-usage |
 | lead_hunting / Lead Hunting | campaigns, lead-discovery, business-research, qualified-leads |
 | sales_crm / Sales & CRM | lead-pipeline, outreach-drafts, follow-ups |
 | system / System | bot-settings, activity-logs |
@@ -43,10 +43,16 @@ T02 runs initial setup, repeated setup, rename, unrelated name collision, delete
 
 ## Phase 2 implementation and recovery controls
 
-The initial manifest is four categories and twelve text channels. Four mandatory panels are published in dashboard, bot-control, subscription-usage and bot-settings. The implementation preserves custom ID mappings, and `/config set` stages role/mapping changes as an administrator-confirmed setup preview rather than applying permission changes silently. Up to ten configured owner IDs and ten existing operator-role IDs are supported by the current permission profile; @everyone cannot be an operator grant.
+The current manifest is four categories and thirteen text channels (17 resources). Five mandatory panels are published in guide, dashboard, bot-control, subscription-usage and bot-settings. The implementation preserves custom ID mappings, and `/config set` stages role/mapping changes as an administrator-confirmed setup preview rather than applying permission changes silently. Up to ten configured owner IDs and ten existing operator-role IDs are supported by the current permission profile; @everyone cannot be an operator grant.
 
-`/setup` accepts optional resource_key/resource_id for explicit adoption, resolution=recreate for reviewed uncertain-resource recovery, and operator_roles as comma-separated IDs or none. For an uncertain panel, resource_key is panel.dashboard, panel.hunt_progress, panel.usage or panel.settings. Recreate is an explicit operator assertion that the prior resource/message is absent after inspection; the bot never infers absence from an unconfirmed response. Adopting a category that contains unmanaged children is blocked so its overwrite changes cannot affect unrelated channels. Name conflicts create a distinctly identified new resource, without adopting the existing name match.
+`/setup` accepts optional resource_key/resource_id for explicit adoption, resolution=recreate for reviewed uncertain-resource recovery, and operator_roles as comma-separated IDs or none. For an uncertain panel, resource_key is panel.guide, panel.dashboard, panel.hunt_progress, panel.usage or panel.settings. Recreate is an explicit operator assertion that the prior resource/message is absent after inspection; the bot never infers absence from an unconfirmed response. Adopting a category that contains unmanaged children is blocked so its overwrite changes cannot affect unrelated channels. Name conflicts create a distinctly identified new resource, without adopting the existing name match.
 
 Previews bind actor, guild, invocation channel, configuration revision, snapshot fingerprint and hash, with the configured five-minute expiry. A change to roles, bot permissions, channels or configuration invalidates a pending approval. Provisioning is a single bounded worker, limited to 180 seconds with 15-second individual Discord requests. The setup_plans/setup_steps journal is its durable state; it does not enqueue a generic hunting job or add an undocumented job kind. Each external mutation is journaled first. Authorization is rechecked before resources, panels and final readiness; an interruption records PARTIAL/UNCERTAIN and never restarts automatically. Final resource, parent and overwrite checks precede an atomic READY/COMPLETED commit.
 
 Local fake-transport/real-SQLite tests cover this behavior. The actual guild overwrite hierarchy, command synchronization, live component behavior and rate limits are not verified until L01 is executed with a regenerated local token.
+
+## Owner-requested tool guide — 2026-11-16
+
+The private guide channel belongs to Control Center and uses the same owner/operator visibility and human-read-only permission profile as other managed channels. It hosts a persistent command guide covering all canonical command keys, mapped channel mentions, practical usage, result terminology and explicit availability. `/guide` returns a private copy only in its mapped channel; the dashboard links to it and its persistent button reuses fresh authorization and stale-panel checks. Reading help never enqueues work or invokes sources/AI.
+
+Existing deployments must restart to register /guide, then run /setup in bot-settings, inspect the preview and confirm the new guide resource/panel/mapping. Nothing is provisioned automatically on restart. A repeat setup edits the existing guide panel rather than sending duplicate guides. The manifest update makes readiness incomplete until this approved setup upgrade is complete; /setup remains available through its documented exception. No SQLite migration or new output-destination key is required.

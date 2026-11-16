@@ -9,7 +9,7 @@ import discord
 from discord import app_commands
 
 from ..domain.discord import (
-    COMMAND_CHANNELS, OUTPUT_DESTINATIONS, ActorContext, DiscordPolicyError, SetupError, authorize,
+    COMMAND_CHANNELS, OUTPUT_DESTINATIONS, PANELS, ActorContext, DiscordPolicyError, SetupError, authorize,
 )
 from ..discovery.overpass import OverpassDiscoveryAdapter
 from ..discovery.philippines_extract import PhilippinesExtractAdapter
@@ -69,7 +69,7 @@ class MiBotiClient(discord.Client):
         await interaction.followup.send(content=text, **options)
 
     async def _validate_operational_resources(self, current, snapshot):
-        if set(current["outputs"]) != set(OUTPUT_DESTINATIONS) or any(p["state"] != "ACTIVE" for p in current["panels"].values()) or len(current["panels"]) != 4:
+        if set(current["outputs"]) != set(OUTPUT_DESTINATIONS) or any(p["state"] != "ACTIVE" for p in current["panels"].values()) or set(current["panels"]) != set(PANELS):
             raise DiscordPolicyError("Configuration is incomplete; ask an administrator to run /setup.")
         from ..domain.discord import RESOURCES
         if set(current["resources"]) != set(RESOURCES):
@@ -164,7 +164,7 @@ class MiBotiClient(discord.Client):
         lines = ["**Nothing changes until you confirm.**", "", "**Managed resource plan**"]
         lines += [f"• {a['action']}: {discord.utils.escape_mentions(discord.utils.escape_markdown(a['name'])).replace(chr(10), ' ')} (`{a['key']}` · ID {a['remote_id'] or 'new'})" for a in plan["actions"]]
         lines += ["", "**Permission policy**", "@everyone cannot view managed channels. Owners/administrators can manage the bot; selected operators can view/use assigned command channels. Human text sending is disabled. bot-settings stays administrator-only.",
-                  "", f"Operator role IDs: {', '.join(plan['roles']) or 'none (owners/administrators only)'}", "", "**Also included**: save missing command/output ID mappings and publish or update four control panels. Existing custom mappings are preserved unless this preview changes them."]
+                  "", f"Operator role IDs: {', '.join(plan['roles']) or 'none (owners/administrators only)'}", "", "**Also included**: save missing command/output ID mappings and publish or update five panels, including the tool guide. Existing custom mappings are preserved unless this preview changes them."]
         for kind in ("command_overrides", "output_overrides"):
             lines += [f"• {key} → {value}" for key, value in plan[kind].items()]
         if plan["warnings"]:
@@ -226,6 +226,9 @@ class MiBotiClient(discord.Client):
                 raise SetupError("This panel is stale; use the current channel panel or slash command.")
             if command == "setup":
                 await self.show_preview(interaction, await self.setup_service.preview(actor))
+            elif command == "guide":
+                from .guide import build_guide_embed
+                await self.reply(interaction, embed=build_guide_embed(current, discovery_enabled=self.settings.safe_summary()["discovery_enabled"]))
             else:
                 await self.reply(interaction, self.status_text(command))
         await self._safe(interaction, action)
@@ -246,6 +249,10 @@ class MiBotiClient(discord.Client):
     async def operation(self, interaction, command, *, action_name=None, key=None, value=None, options_dict=None):
         async def action():
             actor, current = await self._authorized(interaction, command, admin=command == "connections" and action_name == "verify")
+            if command == "guide":
+                from .guide import build_guide_embed
+                await self.reply(interaction, embed=build_guide_embed(current, discovery_enabled=self.settings.safe_summary()["discovery_enabled"]))
+                return
             if command == "config":
                 if action_name == "view":
                     settings_json = json.loads(current["config"].get("settings_json") or "{}")
@@ -443,6 +450,9 @@ class MiBotiClient(discord.Client):
         async def config(interaction: discord.Interaction, action: Literal["view", "set"], key: str | None = None, value: str | None = None):
             await self.operation(interaction, "config", action_name=action, key=key, value=value)
         self.tree.add_command(app_commands.Command(name="config", description="Inspect settings or preview approved mapping/role changes", callback=config), guild=guild)
+        async def guide(interaction: discord.Interaction):
+            await self.operation(interaction, "guide")
+        self.tree.add_command(app_commands.Command(name="guide", description="Learn each tool, its channel, usage and availability", callback=guide), guild=guild)
         async def connections(interaction: discord.Interaction, action: Literal["status", "verify"] = "status"):
             await self.operation(interaction, "connections", action_name=action)
         self.tree.add_command(app_commands.Command(name="connections", description="Inspect unavailable AI connections; verification remains gated", callback=connections), guild=guild)
@@ -475,7 +485,7 @@ class MiBotiClient(discord.Client):
             await self.operation(interaction, "discover", options_dict={"campaign_id": campaign_id, "limit": limit})
         self.tree.add_command(app_commands.Command(name="discover", description="Run bounded non-AI business discovery for an approved campaign", callback=discover), guild=guild)
         for key in COMMAND_CHANNELS:
-            if "." not in key and key not in {"setup", "config", "connections", "discover"}:
+            if "." not in key and key not in {"guide", "setup", "config", "connections", "discover"}:
                 self.tree.add_command(self._placeholder(key, key), guild=guild)
 
     def _placeholder(self, name, key):

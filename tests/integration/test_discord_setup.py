@@ -32,7 +32,7 @@ def test_preview_confirm_and_repeat_are_idempotent(database, configured):
         try:
             preview = await service.preview(actor)
             assert port.calls == []
-            assert len(preview["actions"]) == 16
+            assert len(preview["actions"]) == 17
             assert "completed" in await confirm(service, actor, preview)
             first_ids = set(port.channels)
             current = await db.call(repository.state)
@@ -40,13 +40,13 @@ def test_preview_confirm_and_repeat_are_idempotent(database, configured):
             assert set(current["resources"]) == set(RESOURCES)
             assert set(current["mappings"]) == set(COMMAND_CHANNELS)
             assert set(current["outputs"]) == set(OUTPUT_DESTINATIONS)
-            assert len(port.messages) == 4
+            assert len(port.messages) == 5
             assert "900" in port.channels
             preview = await service.preview(actor)
             assert all(a["action"] == "KEEP" for a in preview["actions"])
             assert "completed" in await confirm(service, actor, preview)
             assert set(port.channels) == first_ids
-            assert len(port.messages) == 4
+            assert len(port.messages) == 5
             assert database.connection.execute("SELECT count(*) FROM jobs").fetchone()[0] == 0
             assert database.connection.execute("SELECT count(*) FROM hunts").fetchone()[0] == 0
         finally: await db.close()
@@ -91,7 +91,7 @@ def test_deleted_resource_is_only_recreated_after_new_confirmation(database, con
             assert any(a["key"] == "business-research" and a["action"] == "CREATE" for a in preview["actions"])
             assert "completed" in await confirm(service, actor, preview)
             assert missing not in port.channels
-            assert len(port.channels) == 17
+            assert len(port.channels) == 18
         finally: await db.close()
     asyncio.run(run())
 
@@ -212,7 +212,7 @@ def test_renamed_channels_keep_identity_and_deleted_panels_require_confirmed_rep
             assert next(a for a in preview["actions"] if a["key"] == "bot-control")["action"] == "KEEP"
             assert "completed" in await confirm(service, actor, preview)
             assert port.channels[channel_id].name == "renamed-safe"
-            assert len(port.messages) == 4
+            assert len(port.messages) == 5
         finally: await db.close()
     asyncio.run(run())
 
@@ -243,7 +243,7 @@ def test_concurrent_confirmations_admit_only_one_setup_job(database, configured)
             assert len(accepted) == 1
             assert sum(isinstance(result, SetupError) for result in results) == 1
             assert "completed" in await service.apply(accepted[0], actor)
-            assert len(port.channels) == 17 and len(port.messages) == 4
+            assert len(port.channels) == 18 and len(port.messages) == 5
         finally: await db.close()
     asyncio.run(run())
 
@@ -265,7 +265,7 @@ def test_uncertain_panel_send_is_not_automatically_repeated(database, configured
             port.failure_key = None
             preview = await service.preview(actor, recreate=("panel.dashboard",))
             assert "completed" in await confirm(service, actor, preview)
-            assert len(port.messages) == 4
+            assert len(port.messages) == 5
         finally: await db.close()
     asyncio.run(run())
 
@@ -284,7 +284,38 @@ def test_lost_authorization_after_channel_creation_blocks_panel_publication(data
                 return result
             port.provision = provision
             assert "partial" in await confirm(service, admin, await service.preview(admin))
-            assert len(port.channels) == 17
+            assert len(port.channels) == 18
             assert port.messages == {}
         finally: await db.close()
+    asyncio.run(run())
+
+
+def test_legacy_workspace_adds_guide_only_after_confirming_upgrade(database, configured):
+    async def run():
+        db,port,service,actor=await rig(database,configured)
+        try:
+            initial=await service.preview(actor)
+            await confirm(service,actor,initial)
+            before=await db.call(repository.state)
+            guide=before["resources"]["guide"]
+            def legacy(db):
+                with db.transaction() as c:
+                    c.execute("DELETE FROM panels WHERE panel_key='guide'")
+                    c.execute("DELETE FROM command_channels WHERE command_key='guide'")
+                    c.execute("DELETE FROM discord_resources WHERE resource_key='guide'")
+            await db.call(legacy)
+            port.channels.pop(guide["discord_id"])
+            actor=replace(actor,channel_id=before["mappings"]["setup"])
+            calls=list(port.calls)
+            preview=await service.preview(actor)
+            assert port.calls==calls
+            creates=[a["key"] for a in preview["actions"] if a["action"]=='CREATE']
+            assert creates==['guide']
+            assert 'completed' in await confirm(service,actor,preview)
+            after=await db.call(repository.state)
+            assert all(after["resources"][k]["discord_id"]==v["discord_id"] for k,v in before["resources"].items() if k!='guide')
+            assert after["mappings"]["guide"]==after["resources"]["guide"]["discord_id"]
+            assert len(after["panels"])==5
+        finally:
+            await db.close()
     asyncio.run(run())

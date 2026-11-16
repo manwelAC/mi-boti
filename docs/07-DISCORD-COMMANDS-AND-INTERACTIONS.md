@@ -14,6 +14,7 @@ For every command/component: reject DMs and foreign guilds → obtain current me
 
 | Command key | Default channel | Permission | Arguments and behavior |
 |---|---|---|---|
+| guide | guide | O | `/guide`; private tool guide with mapped channels, usage, result explanations and unavailable-feature labels; creates no jobs |
 | hunt.start | bot-control | O | `/hunt start quota:<int> campaign:<id?>`; default active campaign from config; start bounded session |
 | hunt.pause | bot-control | O | `/hunt pause session:<id?>`; request checkpoint pause |
 | hunt.resume | bot-control | O | `/hunt resume session:<id?>`; fresh eligibility, resume PAUSED/INTERRUPTED |
@@ -58,8 +59,10 @@ All denials are ephemeral and include actionable guidance without secrets. Busy 
 
 ## Current Phase 2 command surface
 
-All 21 canonical keys are registered as guild-scoped slash commands and share the policy boundary. The implemented actions are setup previews/confirmations, config view, confirmed role/channel-mapping configuration, and truthful disabled-state responses for usage, connections status and hunt status. `/connections verify` additionally checks administrator authority but performs no CLI task. Other workflows are explicit placeholders: their eventual arguments/actions above remain contracts for later phases, and the current placeholders do not enqueue jobs or expose an execution bypass.
+All 22 canonical keys are registered as guild-scoped slash commands and share the policy boundary. The implemented actions are setup previews/confirmations, config view, confirmed role/channel-mapping configuration, and truthful disabled-state responses for usage, connections status and hunt status. `/connections verify` additionally checks administrator authority but performs no CLI task. Other workflows are explicit placeholders: their eventual arguments/actions above remain contracts for later phases, and the current placeholders do not enqueue jobs or expose an execution bypass.
 
 `/setup resource_key:<key?> resource_id:<snowflake?> resolution:<inspect|recreate> operator_roles:<IDs|none?>` provides reviewed adoption/recovery. `/config action:<view|set> key:<string?> value:<string?>` currently supports operator_role_ids, command_channel.<canonical_key> and output_destination.<output_key>. Channel targets must already be active managed text channels; adopting an unrelated resource requires `/setup` and its own preview. Unsupported config keys, tokens and executable paths are rejected before persistence. Other mutable settings remain later-phase work.
 
 The transport privately defers before metadata/database work, then reloads membership, role permissions, resource IDs, channel overwrites and control-panel availability. Wrong guild/channel/member/permission or incomplete configuration never creates operational jobs or mutates operational records. A separate redacted denial audit is permitted and required by the security contract. Actor-bound confirmation is the only path to the durable setup worker. A lost response does not replay a confirmed job. All unimplemented discovery, research, CRM, backup-command and AI workflows remain disabled.
+
+The owner-requested guide adds a 22nd canonical command key. Its channel is private and read-only for ordinary text, while /guide and the persistent Read tool guide button remain usable by authorized operators. The help catalog must cover every canonical key and fit native Discord embed limits. Future workflows are labelled unavailable; help examples do not authorize or enable them.

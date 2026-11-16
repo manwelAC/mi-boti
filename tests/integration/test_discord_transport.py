@@ -499,3 +499,29 @@ def test_sdk_bucket_allows_available_requests_in_long_reset_window(database, con
             await client.close()
             await db.close()
     asyncio.run(run())
+
+
+def test_guide_command_and_persistent_button_are_private_and_create_no_jobs(database, configured):
+    async def run():
+        db,port,client,actor=await initialized(database,configured)
+        try:
+            current=await db.call(repository.state)
+            guide_actor=replace(actor,channel_id=current["mappings"]["guide"])
+            calls=list(port.calls)
+            interaction=Interaction(guide_actor)
+            await client.operation(interaction,"guide")
+            assert interaction.sent[-1]["embed"].title=="Mi Boti · your tool guide"
+            panel=current["panels"]["guide"]
+            button_interaction=Interaction(guide_actor)
+            button_interaction.message=SimpleNamespace(id=int(panel["message_id"]))
+            await client.panel_action(button_interaction,"guide",panel["id"],panel["revision"])
+            assert button_interaction.sent[-1]["embed"].title=="Mi Boti · your tool guide"
+            assert await db.call(lambda d:d.connection.execute("SELECT count(*) FROM jobs").fetchone()[0])==0
+            assert port.calls==calls
+            denied=Interaction(actor)
+            await client.operation(denied,"guide")
+            assert 'Use <#' in denied.sent[-1]["content"]
+        finally:
+            await client.close()
+            await db.close()
+    asyncio.run(run())

@@ -608,3 +608,23 @@ Five separate consecutive stalled-DNS regression invocations:
 ```
 
 The warnings remain existing discord.py deprecations. Changed application/test files: src/mi_boti/discovery/philippines_extract.py, tests/integration/test_philippines_extract.py and tests/integration/test_discovery_worker.py. This ledger and DEVELOPMENT-HANDOFF.md were updated with the results. No production data or Discord resources were modified, no source download/probe was performed and discovery/AI/hunting enablement was not changed. Other Antigravity work remains uncommitted; this follow-up does not claim full P2/P3 acceptance or replace the remaining live workflow/review-UI gates.
+
+## Owner-requested tool guide — 2026-11-16
+
+Implemented the requested private guide channel under Control Center, a persistent guide panel, a dashboard navigation link and the guide canonical command. The guide covers every command key with purpose, current mapped channel, usage and availability, plus result terminology and the first campaign steps. It explicitly distinguishes implemented, disabled and planned tools and never starts jobs/source/AI work. The manifest now contains four categories and thirteen text channels (17 resources), 22 command mappings, nine output destinations and five mandatory panels. Counts in automated setup fixtures were updated to the new manifest; no SQL migration or configurable key was added.
+
+Existing guilds must restart and explicitly preview/confirm /setup to add the guide. Until that upgrade is approved, missing guide resources/mappings/panels fail readiness closed while the setup exception remains available. No real server resources were created or changed during development. Initial creation, repeated setup, legacy-workspace upgrade, private command/button output, wrong-channel rejection and help-catalog/embed limits are covered by synthetic tests. Human-readable guide publication and readability in the real guild remain a live check after confirmation.
+
+Executed checks:
+
+```text
+Focused initial guide content, private interaction and legacy upgrade tests:
+4 passed in 1.05s
+.venv\Scripts\python.exe -m pytest -q
+502 passed, 39 warnings in 21.17s
+After the final /guide command-description/registration refinement:
+.venv\Scripts\python.exe -m pytest -q tests/integration/test_discord_transport.py tests/unit/test_operator_guide.py
+23 passed, 39 warnings in 3.41s
+```
+
+Warnings remain upstream discord.py deprecations. Changed application files: domain/discord.py and discord_app/bot.py, transport.py, views.py; added discord_app/guide.py. Tests: updated setup/prerequisite counts, added guide integration/upgrade checks and tests/unit/test_operator_guide.py. Updated README, CHANGELOG and docs 06/07/16 plus this acceptance record and development handoff. Existing runtime datasets/registry/configuration and provider gates remain unchanged. Phase 3 identity review UI and the live campaign/discovery walkthrough are still pending; this guide addition does not claim phase completion.

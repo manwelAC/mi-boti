@@ -4,6 +4,10 @@ Versions use MAJOR.MINOR.PATCH with annotated v tags. Releases before 1.0 are de
 
 ## Unreleased
 
+### Operator guide
+
+- Add a private guide channel, persistent tool guide, dashboard link and /guide command. Document all command mappings, usage and availability; existing servers add it through a reviewed setup upgrade.
+
 ### Phase 3 core
 
 - Add normalized public observations, transactional global identity reservations, ambiguity holds and cross-query review reuse with immutable origin ownership.

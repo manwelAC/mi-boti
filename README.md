@@ -38,13 +38,13 @@ The goal is a durable working memory for custom software prospecting: who was di
 
 **v0.2.0 · Discord infrastructure milestone**
 
-The foundation and Discord integration are implemented. Live checks have confirmed setup, repeat setup, channel restrictions, command responses and the hunt-control button after restart. Full live acceptance is still in progress.
+The foundation and Discord integration are implemented, including a private operator guide channel and `/guide` help. Live checks have confirmed setup, repeat setup, channel restrictions, command responses and the hunt-control button after restart. Full live acceptance is still in progress.
 
 | Layer | Progress |
 | :--- | :--- |
 | Foundation | Implemented: configuration, private storage, logging, migrations and backup primitives |
 | Discord workspace | Implemented: private channels, authorization, confirmed provisioning and persistent panels |
-| Verification | **486 automated tests passed** on Windows / CPython 3.14.6; 37 upstream SDK warnings remain |
+| Verification | **502 automated tests passed** on Windows / CPython 3.14.6; 39 upstream SDK warnings remain |
 | Discovery & registry | Implemented & L03 verified: regional Geofabrik Philippines OSM extract importer (`pyosmium==4.3.2`) with subprocess-isolated parsing and immutable generation pointers, local SQLite snapshot adapter (`PhilippinesExtractAdapter`), transactional registry, versioned non-AI campaigns, deferred cross-database cursor acknowledgement, bounded worker & review resolution; production discovery stays disabled (`enabled = false` enforced) |
 | Research & CRM | Planned for the non-AI MVP |
 | AI & autonomous hunting | Disabled until a provider passes real compatibility and allowance verification |

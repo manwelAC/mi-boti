@@ -184,9 +184,12 @@ class DiscordPort:
     async def publish_panel(self, key, channel_id, panel_id, revision, message_id, current):
         from .views import PanelView
         channel = await self.api(self.guild.fetch_channel(int(channel_id)))
-        embed = discord.Embed(title={"dashboard": "Mi Boti", "hunt_progress": "Hunt control", "usage": "AI connections", "settings": "Server setup"}[key],
+        embed = discord.Embed(title={"guide": "Tool guide", "dashboard": "Mi Boti", "hunt_progress": "Hunt control", "usage": "AI connections", "settings": "Server setup"}[key],
                               description="Phase 2 infrastructure. Discovery, research, CRM, AI execution and hunting remain disabled. Use the assigned slash-command channels. No outreach is sent automatically.",
                               color=0x4F9CF9)
+        if key == "guide":
+            from .guide import build_guide_embed
+            embed = build_guide_embed(current, discovery_enabled=self.settings.safe_summary()["discovery_enabled"])
         embed.set_footer(text=f"Mi Boti panel {panel_id} · revision {revision}")
         view = PanelView(self.client, key, panel_id, revision, current)
         if message_id:

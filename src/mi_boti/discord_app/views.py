@@ -26,16 +26,16 @@ class PanelView(discord.ui.View):
             if resource and resource["discord_id"]:
                 mappings.setdefault(command, resource["discord_id"])
         if key == "dashboard":
-            for label, command in (("Hunt control", "hunt.status"), ("Settings", "setup"), ("Connections", "connections")):
+            for label, command in (("Tool guide", "guide"), ("Hunt control", "hunt.status"), ("Settings", "setup"), ("Connections", "connections")):
                 if command in mappings:
                     self.add_item(discord.ui.Button(label=label, url=f"https://discord.com/channels/{client.settings.guild_id}/{mappings[command]}"))
             return
-        command = {"hunt_progress": "hunt.status", "usage": "usage", "settings": "setup"}[key]
+        command = {"guide": "guide", "hunt_progress": "hunt.status", "usage": "usage", "settings": "setup"}[key]
         own_channel = current["resources"].get(PANELS[key], {}).get("discord_id")
         if command in mappings and mappings[command] != own_channel:
             self.add_item(discord.ui.Button(label="Open assigned command channel", url=f"https://discord.com/channels/{client.settings.guild_id}/{mappings[command]}"))
             return
-        button = discord.ui.Button(label="Preview setup" if key == "settings" else "Refresh status",
+        button = discord.ui.Button(label="Preview setup" if key == "settings" else "Read tool guide" if key == "guide" else "Refresh status",
                                    custom_id=f"mb:v1:panel:{panel_id}:{revision}")
         async def callback(interaction):
             await client.panel_action(interaction, command, panel_id, revision)

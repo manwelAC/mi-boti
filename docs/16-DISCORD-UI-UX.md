@@ -39,3 +39,7 @@ The progress edit interval is >=10 seconds; coalesce intermediate changes, respe
 ## Acceptance
 
 T03 validates persistent controls after restart, actor-bound confirmations, expired modals, forged IDs, revision conflicts and correct-channel routing. T01 ensures components reject unauthorized work. L01 inspects actual private responses, pagination, mentions, message limits, setup preview and progress. T13 verifies restart restores controls without resuming hunting. See [testing](20-TESTING-STRATEGY.md).
+
+## Tool guide channel
+
+The owner requested a persistent place to learn every tool. The guide panel lists each command, its purpose, assigned channel, current availability and usage. It explains record IDs, duplicates, invalid observations, incomplete coverage and manual outreach. The dashboard has a Tool guide link; the guide offers a persistent Read tool guide button and /guide for a private copy. No walkthrough starts discovery, qualifications or hunting. Public channel provisioning remains subject to the confirmed setup contract in doc 06.

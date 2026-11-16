@@ -34,13 +34,14 @@ CATEGORIES = (
     ResourceSpec("system", "System", "CATEGORY"),
 )
 CHANNELS = tuple(ResourceSpec(key, key, "TEXT", parent) for parent, keys in (
-    ("control_center", ("dashboard", "bot-control", "subscription-usage")),
+    ("control_center", ("guide", "dashboard", "bot-control", "subscription-usage")),
     ("lead_hunting", ("campaigns", "lead-discovery", "business-research", "qualified-leads")),
     ("sales_crm", ("lead-pipeline", "outreach-drafts", "follow-ups")),
     ("system", ("bot-settings", "activity-logs")),
 ) for key in keys)
 RESOURCES = {r.key: r for r in (*CATEGORIES, *CHANNELS)}
 COMMAND_CHANNELS = {
+    "guide": "guide",
     **{f"hunt.{action}": "bot-control" for action in ("start", "pause", "resume", "stop", "status")},
     **{f"campaign.{action}": "campaigns" for action in ("create", "list", "edit")},
     "discover": "lead-discovery", "research": "business-research", "qualified": "qualified-leads",
@@ -53,7 +54,7 @@ OUTPUT_DESTINATIONS = {
     "qualified_leads": "qualified-leads", "pipeline": "lead-pipeline", "drafts": "outreach-drafts",
     "followups": "follow-ups", "usage": "subscription-usage", "activity": "activity-logs",
 }
-PANELS = {"dashboard": "dashboard", "hunt_progress": "bot-control", "usage": "subscription-usage", "settings": "bot-settings"}
+PANELS = {"guide": "guide", "dashboard": "dashboard", "hunt_progress": "bot-control", "usage": "subscription-usage", "settings": "bot-settings"}
 REQUIRED_BOT_PERMISSIONS = frozenset({
     "view_channel", "send_messages", "embed_links", "attach_files", "read_message_history",
     "manage_channels", "manage_roles",

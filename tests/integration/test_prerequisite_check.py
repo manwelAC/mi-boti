@@ -46,7 +46,7 @@ def test_ready_checkpoint_is_read_only_and_detects_missing_mapping(database, con
     result = inspect_database(database.path)
     assert result["local_checkpoint_passed"]
     assert not result["full_phase2_accepted"]
-    assert result["counts"]["discord_resources"] == 16
+    assert result["counts"]["discord_resources"] == 17
     assert list(database.connection.iterdump()) == before
     database.connection.execute("DELETE FROM command_channels WHERE command_key='usage'")
     result = inspect_database(database.path)
