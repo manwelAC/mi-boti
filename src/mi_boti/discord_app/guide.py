@@ -10,7 +10,7 @@ COMMAND_HELP = {
     "campaign.create": ("Define a search", "Use `/campaign create name:QC Cafes`. Current defaults target a small Quezon City restaurant/cafe test box, not the entire city. Review the bbox before searching.", "campaign"),
     "campaign.list": ("Find campaign IDs", "Use `/campaign list`. Copy the ID from the result for discovery or editing; names alone do not identify a record.", "campaign"),
     "campaign.edit": ("Change a search", "Use `/campaign edit campaign_id:<ID>` and the fields you want to change. Edits create a new campaign version; prior history remains.", "campaign"),
-    "discover": ("Find businesses in the local extract", "Once enabled, use `/discover campaign_id:<ID> limit:10`. Results report seen/new/existing/ambiguous/invalid. Existing is a duplicate, not an error; ambiguous needs review. New does not mean qualified.", "discovery"),
+    "discover": ("Find businesses in the local extract", "Use `/discover campaign_id:<ID> limit:10`. Completion shows saved results with pages and an inspection dropdown. Reopen with `/discover job_id:<job UUID>`. Existing means duplicate; ambiguous needs review. New does not mean qualified or live website research.", "discovery"),
     "usage": ("Inspect AI availability", "Use `/usage`. Disabled/unverified means no AI task can run. Login or installation alone does not prove remaining allowance.", "ready"),
     "connections": ("Inspect provider connections", "Use `/connections action:status`. Verification remains gated; this does not log in or execute AI.", "ready"),
     "hunt.status": ("Inspect hunting status", "Use `/hunt status`. Hunting remains disabled; a status reply does not start work.", "ready"),

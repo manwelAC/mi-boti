@@ -674,3 +674,24 @@ check-config: configuration=valid, discovery_enabled=true, ai_enabled=false, hun
 ```
 
 The shell check-config intentionally used no Discord identity/token; its guild/owner/token flags were false. The existing launcher supplies identity and cached credentials when the owner restarts it. No credentials were read. Warnings remain discord.py deprecations. Owner screenshots confirm private /lead empty queue and real campaign creation, not live link/separate confirmation or /discover results. Next live check: restart and run a bounded /discover for the saved campaign. Phase 3 remains unaccepted pending that walkthrough; no Phase 4a fetching is implemented or claimed here.
+
+## Discovery result browser — 2026-11-16
+
+Owner's screenshot shows job 70ac3fe6-5d59-41e8-ab0e-bf7201d0ba72 SUCCEEDED with requests=1, seen=10, new=10, existing=0, ambiguous=0, invalid=0. This is owner-supplied live command evidence, not a developer replay or complete Phase 3 acceptance.
+
+Implemented private saved-observation pages automatically following the completion summary. /discover job_id:<UUID> page:<int> reopens historical jobs independently of source availability, without source calls or new jobs. Pages show names, business IDs, disposition, source identifiers and observation dates. Actor-bound ten-minute controls recheck current discover authorization and offer saved source/address/attribution/limitation details; they do not bypass lead-channel identity decisions. Added tests for record lookup, empty pages, private rendering, detail selection, wrong channel, another actor, lost membership, expiry and unchanged candidate state/no dispatched tasks. No migration, provider call or runtime-data mutation was needed.
+
+Executed checks:
+
+```text
+.venv\Scripts\python.exe -m pytest -q
+525 passed, 174 warnings in 21.22s
+.venv\Scripts\python.exe -m compileall -q src tests
+Exit code 0
+.venv\Scripts\python.exe -m pip check
+No broken requirements found.
+git diff --check
+Exit code 0 (line-ending notices only)
+```
+
+Warnings are existing discord.py positional-count deprecations exercised by additional escaping. Changed: discord_app/discovery_results.py, bot.py, guide.py; tests/integration/test_discovery_results_ui.py; README, CHANGELOG, docs 07/22/LOCAL-OPERATIONS and DEVELOPMENT-HANDOFF. Live result-card rendering after restart remains pending. Website research/qualification/AI/hunting are not implemented or enabled by this increment.

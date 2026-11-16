@@ -349,6 +349,12 @@ class MiBotiClient(discord.Client):
                     return
             if command == "discover":
                 opts = options_dict or {}
+                if opts.get("job_id"):
+                    if opts.get("campaign_id") is not None or opts.get("limit") is not None:
+                        raise SetupError("Use job_id alone with optional page to view saved results; omit campaign_id and limit.")
+                    from .discovery_results import show_results
+                    await show_results(self, interaction, opts["job_id"], opts.get("page", 1))
+                    return
                 source_adapter = self.discovery_source_factory()
                 if source_adapter is None:
                     from ..discovery.overpass import SourcePolicyError
@@ -429,6 +435,8 @@ class MiBotiClient(discord.Client):
                                 f"ambiguous={prog.get('ambiguous', 0)}, invalid={prog.get('invalid', 0)}."
                             )
                             await self.reply(interaction, summary)
+                            from .discovery_results import show_results
+                            await show_results(self, interaction, done_job["id"])
                     except discord.HTTPException:
                         logger.warning("Discovery completion receipt could not be sent; job state is persisted in SQLite.")
                 task = asyncio.create_task(run_discover_worker(), name="mi-boti-discover-" + enqueued["id"])
@@ -481,8 +489,9 @@ class MiBotiClient(discord.Client):
         campaign_group.add_command(app_commands.Command(name="list", description="List campaigns in this deployment", callback=campaign_list))
         campaign_group.add_command(app_commands.Command(name="edit", description="Update or archive a campaign with version check", callback=campaign_edit))
         self.tree.add_command(campaign_group, guild=guild)
-        async def discover(interaction: discord.Interaction, campaign_id: str | None = None, limit: int | None = None):
-            await self.operation(interaction, "discover", options_dict={"campaign_id": campaign_id, "limit": limit})
+        async def discover(interaction: discord.Interaction, campaign_id: str | None = None, limit: int | None = None,
+                           job_id: str | None = None, page: int = 1):
+            await self.operation(interaction, "discover", options_dict={"campaign_id": campaign_id, "limit": limit, "job_id": job_id, "page": page})
         self.tree.add_command(app_commands.Command(name="discover", description="Run bounded non-AI business discovery for an approved campaign", callback=discover), guild=guild)
         async def lead(interaction: discord.Interaction, id: str | None = None, page: int = 1,
                        action: Literal["inspect", "link", "separate"] = "inspect",

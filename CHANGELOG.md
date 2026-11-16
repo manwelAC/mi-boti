@@ -4,6 +4,10 @@ Versions use MAJOR.MINOR.PATCH with annotated v tags. Releases before 1.0 are de
 
 ## Unreleased
 
+### Discovery results browsing
+
+- Add private paginated saved-observation cards and source-detail selection after discovery completion. Reopen historical results with /discover job_id without running another search. Recheck authorization on every component; identity mutations remain in lead-pipeline.
+
 ### Operator guide
 
 - Add a private guide channel, persistent tool guide, dashboard link and /guide command. Document all command mappings, usage and availability; existing servers add it through a reviewed setup upgrade.
