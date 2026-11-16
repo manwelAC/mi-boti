@@ -628,3 +628,26 @@ After the final /guide command-description/registration refinement:
 ```
 
 Warnings remain upstream discord.py deprecations. Changed application files: domain/discord.py and discord_app/bot.py, transport.py, views.py; added discord_app/guide.py. Tests: updated setup/prerequisite counts, added guide integration/upgrade checks and tests/unit/test_operator_guide.py. Updated README, CHANGELOG and docs 06/07/16 plus this acceptance record and development handoff. Existing runtime datasets/registry/configuration and provider gates remain unchanged. Phase 3 identity review UI and the live campaign/discovery walkthrough are still pending; this guide addition does not claim phase completion.
+
+## Phase 3 identity-review UI — 2026-11-16
+
+Implemented private /lead inspection for review/business/lead UUIDs and a ten-item open-review queue. Reviews display source assertions, observation time, address and suggested identities. Link/separate previews require a rationale and an actor-bound five-minute confirmation. Confirmation rechecks live membership, channel policy and managed resources. Linking uses the previewed business revision; repository transactions retain provenance and prevent double resolution. Concurrent clicks, replay, expiry, stale revisions, another actor, wrong channel, lost membership and invalid rationale have regression coverage. No migration, runtime-source enablement, AI execution or production-data change was made. CRM qualification, notes and history remain unimplemented.
+
+Executed verification:
+
+```text
+.venv\Scripts\python.exe -m pytest -q
+512 passed, 108 warnings in 24.75s
+.venv\Scripts\python.exe -m compileall -q src tests
+Exit code 0
+.venv\Scripts\python.exe -m pip check
+No broken requirements found.
+git diff --check
+Exit code 0 (line-ending notices only)
+git ls-files AGENTS.md
+(no output)
+git check-ignore AGENTS.md
+AGENTS.md
+```
+
+The warnings are the existing discord.py positional-count deprecation, exercised by additional escaping tests. Live rendering and the campaign/discovery operator walkthrough remain pending; this is not full Phase 3 acceptance. Transient private confirmations do not survive restart and must be reopened. Changed files: discord_app/identity.py, bot.py, guide.py, tests/integration/test_identity_ui.py, README, CHANGELOG, docs 07/22 and DEVELOPMENT-HANDOFF.

@@ -10,6 +10,8 @@ Versions use MAJOR.MINOR.PATCH with annotated v tags. Releases before 1.0 are de
 
 ### Phase 3 core
 
+- Add private `/lead` registry inspection and paginated identity-review queue, with source/match details, actor-bound decision confirmations, fresh authorization and optimistic target revision checks. CRM qualification and quota credit remain outside these actions.
+
 - Add normalized public observations, transactional global identity reservations, ambiguity holds and cross-query review reuse with immutable origin ownership.
 - Add a bounded fixture query planner and offline Overpass JSON parser; test separate-connection duplicate races, all dispositions, branch distinctions, provenance and stale-worker rejection.
 - Add versioned non-AI PH campaign validation/storage (`/campaign create|list|edit` and `active_campaign_id` via `/config set`), durable query/attempt/coverage lifecycle (`FRESH`, `EXHAUSTED`, `PARTIAL`) with request budgets, bounded manual discovery job admission/leases/worker/recovery (`/discover`) with non-blocking async execution, periodic lease heartbeats and fresh per-step authorization, and identity-review/hierarchy resolution with cycle prevention.

@@ -484,8 +484,14 @@ class MiBotiClient(discord.Client):
         async def discover(interaction: discord.Interaction, campaign_id: str | None = None, limit: int | None = None):
             await self.operation(interaction, "discover", options_dict={"campaign_id": campaign_id, "limit": limit})
         self.tree.add_command(app_commands.Command(name="discover", description="Run bounded non-AI business discovery for an approved campaign", callback=discover), guild=guild)
+        async def lead(interaction: discord.Interaction, id: str | None = None, page: int = 1,
+                       action: Literal["inspect", "link", "separate"] = "inspect",
+                       target: str | None = None, rationale: str | None = None):
+            from .identity import lead as show_lead
+            await show_lead(self, interaction, identifier=id, page=page, action=action, target=target, rationale=rationale)
+        self.tree.add_command(app_commands.Command(name="lead", description="Inspect registry records and confirm identity reviews", callback=lead), guild=guild)
         for key in COMMAND_CHANNELS:
-            if "." not in key and key not in {"guide", "setup", "config", "connections", "discover"}:
+            if "." not in key and key not in {"guide", "setup", "config", "connections", "discover", "lead"}:
                 self.tree.add_command(self._placeholder(key, key), guild=guild)
 
     def _placeholder(self, name, key):

@@ -21,7 +21,7 @@ COMMAND_HELP = {
     "research": ("Collect website evidence", "Future non-AI tool: preserve public observations, source URLs, timestamps and limitations. A missing booking link is not proof of no booking system.", "planned"),
     "qualified": ("Review qualified prospects", "Future tool: list qualified leads with supporting evidence. Discovered businesses are not automatically qualified.", "planned"),
     "leads": ("Browse the CRM", "Future tool: list pipeline records and stages. Discovery alone does not create CRM leads.", "planned"),
-    "lead": ("Inspect one business or lead", "Future tool: view history, notes and evidence and resolve ambiguous identities. The Discord identity-review UI is not implemented yet.", "planned"),
+    "lead": ("Inspect registry identities", "Use /lead for the open review queue, or /lead id:<UUID> for a review/business. To resolve a review, supply action:link target:<business UUID> rationale:<reason>, or action:separate rationale:<reason>, then confirm within five minutes. No lead or quota credit is created. CRM notes, evidence and qualification remain unavailable.", "ready"),
     "pipeline": ("Move a lead between stages", "Future tool: update a reviewed lead's stage using revision checks. Currently unavailable.", "planned"),
     "outreach": ("Prepare and review a draft", "Future tool: create, edit and approve outreach drafts. Mi Boti never sends outreach; you review and send it manually.", "planned"),
     "followup": ("Track the next action", "Future tool: record due dates, notes and completion for a lead. Currently unavailable.", "planned"),
