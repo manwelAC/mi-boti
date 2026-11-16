@@ -43,6 +43,23 @@ class ManualCrmService:
         actor, guard = await self._context("lead")
         return await self.database.call(lambda db: crm.add_note(db, lead_id, actor.user_id, _guard=guard, **options))
 
+    async def preview_contact(self, business_id, **options):
+        _, guard = await self._context("lead")
+        return await self.database.call(lambda db: crm.contact_preview(db, business_id, _guard=guard, **options))
+
+    async def record_contact(self, business_id, *, confirmed=False, **options):
+        actor, guard = await self._context("lead")
+        if confirmed is not True: raise CrmError("Explicit confirmation of contact evidence and business attribution is required.")
+        return await self.database.call(lambda db: crm.record_contact(db, business_id, actor.user_id, _guard=guard, **options))
+
+    async def preview_qualification(self, business_id, **options):
+        _, guard = await self._context("lead")
+        return await self.database.call(lambda db: crm.qualification_preview(db, business_id, _guard=guard, **options))
+
+    async def preview_transition(self, lead_id, **options):
+        _, guard = await self._context("pipeline")
+        return await self.database.call(lambda db: crm.transition_preview(db, lead_id, _guard=guard, **options))
+
     async def _read(self, command, function):
         _, guard = await self._context(command)
         def read(db):
@@ -53,6 +70,9 @@ class ManualCrmService:
 
     async def get_lead(self, lead_id):
         return await self._read("lead", lambda db: crm.get_lead(db, lead_id))
+
+    async def get_note(self, lead_id, note_id):
+        return await self._read("lead", lambda db: crm.get_note(db, lead_id, note_id))
 
     async def list_leads(self, *, stage=None, page=1):
         return await self._read("leads", lambda db: crm.list_records(db, stage=stage, page=page))

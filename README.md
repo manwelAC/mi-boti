@@ -44,9 +44,9 @@ The foundation and Discord integration are implemented, including a private oper
 | :--- | :--- |
 | Foundation | Implemented: configuration, private storage, logging, migrations and backup primitives |
 | Discord workspace | Implemented: private channels, authorization, confirmed provisioning and persistent panels |
-| Verification | **680 automated tests passed** on Windows / CPython 3.14.6; 361 upstream SDK warnings remain |
+| Verification | **723 tests passed in the last full suite**, followed by **135 focused CRM tests** after final contact-proof hardening, on Windows / CPython 3.14.6; upstream SDK warnings remain |
 | Discovery & registry | Implemented & L03 verified: regional Geofabrik Philippines OSM extract importer (`pyosmium==4.3.2`) with subprocess-isolated parsing and immutable generation pointers, local SQLite snapshot adapter (`PhilippinesExtractAdapter`), transactional registry, versioned non-AI campaigns, deferred cross-database cursor acknowledgement, bounded worker & review resolution; manual local-source discovery can be explicitly enabled after snapshot preparation; public Overpass remains blocked |
-| Research & CRM | Non-AI `/research` supports confirmed site-access reviews, bounded collection and saved evidence; live Discord/business-site acceptance pending. CRM core is tested in isolation; CRM Discord commands remain unavailable |
+| Research & CRM | Non-AI `/research` supports confirmed site-access reviews, bounded collection and saved evidence; live Discord/business-site acceptance pending. CRM core, contact capture and review screens are tested in isolation; CRM commands remain unavailable |
 | Identity review | Private `/lead` queue and registry inspection, with confirmed link/separate decisions; live Discord rendering pending |
 | AI & autonomous hunting | Disabled until a provider passes real compatibility and allowance verification |
 
@@ -164,7 +164,7 @@ The remaining OPEN inputs are **D11: verified AI provider**, **D12: website rese
 | D13 | Supply allowed guild/owner IDs, operator roles, private channel policy and bot credentials locally | OPEN | Deployment owner | [Setup](docs/06-DISCORD-SERVER-ARCHITECTURE.md), [configuration](docs/23-IMPLEMENTATION-GUIDELINES.md) |
 | D14 | Marker-based publication reconciliation/UNCERTAIN delivery, future MCP interface, and expanded backup manifests follow the working MVP; basic safety remains mandatory | FINAL | Project owner | [Post-MVP work](docs/21-DEVELOPMENT-ROADMAP.md) |
 | D15 | The initial target market is the Philippines (country code PH); any sample city/category used for feasibility is a test fixture, not a campaign decision | FINAL | Project owner | [Discovery scope and probe](docs/08-BUSINESS-DISCOVERY.md) |
-| D16 | Permit isolated, unreleased non-AI CRM core development while the Phase 4a successful live-Discord check remains open; this does not accept either phase or enable CRM commands | FINAL | Project owner, 2026-11-16 | [Sequencing exception](docs/21-DEVELOPMENT-ROADMAP.md) |
+| D16 | Permit isolated, unreleased non-AI CRM development (core, contacts and review screens) while the Phase 4a successful live-Discord check remains open; this does not accept either phase or enable CRM commands | FINAL | Project owner, 2026-11-16 | [Sequencing exception](docs/21-DEVELOPMENT-ROADMAP.md) |
 
 </details>
 

@@ -906,3 +906,24 @@ AGENTS.md
 Warnings are the existing upstream SDK deprecation. T12 isolated-core tests use an independent expected graph for all 64 stage pairs, prerequisite and revision failures with complete rollback, foreign/empty/duplicate/tampered/unknown-confidence/future evidence, duplicate-lead races across real separate connections, append-only corrections, fresh authorization/role/channel/confirmation guards, and backup/restore persistence of stage/note/event history. Network/provider spies reject unexpected HTTP/CLI execution in service tests. Source provenance and evidence excerpt hashes share a reusable verifier with backup validation.
 
 Changed application files: new domain/crm.py, repositories/crm.py, services/crm.py; factored repositories/research_integrity.py excerpt validation for reuse. Added integration/test_manual_crm.py. Updated README (status/decision D16), CHANGELOG, docs 04/14/20/21, this record and DEVELOPMENT-HANDOFF; local AGENTS remains ignored/untracked. No SQL migration, dependency, bot registration, source request, version/tag or AI/hunting enablement. Remaining: reviewed contact capture, actor-bound Discord qualification/pipeline confirmations/rendering, CRM list/detail/notes adapters, reminders, exports and manual drafts. No full T12, P4a, P6 or live-readiness claim is made.
+
+## Isolated contact capture and CRM interaction verification — 2026-11-16
+
+Continued owner-authorized D16 development without registering CRM commands or changing production records. Added source-backed EMAIL/PHONE/WEBSITE contact capture, supporting registry identifiers, read-only previews and actor-bound expiring native Discord confirmations. Added bounded lead/detail/note views and full review-text access. Confirmation repeats authorization and revision checks; cancellation, replay and stale proposals cannot apply mutations. Explicit null revisions fail closed. Literal contact proof rejects guessed, partial and Unicode-confusable matches; URL paths remain exact without punctuation trimming. Shared contacts do not merge businesses. Qualification remains MANUAL with no score or hunt credit.
+
+Executed verification:
+
+```text
+.venv\Scripts\python.exe -m pytest -q
+723 passed, 514 warnings in 91.93s
+.venv\Scripts\python.exe -m pytest -q tests/integration/test_crm_interactions.py tests/integration/test_manual_crm.py
+135 passed, 153 warnings in 19.19s
+```
+
+The full suite preceded final contact-proof refinements; the focused result above covers those refinements and two additional exact-URL regressions. Do not interpret 723 as a final full-suite rerun. Warnings originate in discord.py's deprecated positional re.sub count. Tests use synthetic SQLite records and native Discord objects with simulated transport/authorization; no real Discord acceptance is claimed.
+
+Application files: src/mi_boti/repositories/crm.py, src/mi_boti/services/crm.py and new src/mi_boti/discord_app/crm.py. Tests: tests/integration/test_manual_crm.py and new tests/integration/test_crm_interactions.py. Documentation: README, CHANGELOG, docs 04/14/16/20/21/22 and DEVELOPMENT-HANDOFF. No migration, dependency, version/tag, runtime registration, provider call, autonomous hunting or outreach sending was added. Contact proof conservatively requires a literal saved observation (or exact observed website URL); inferred routes and unsupported formatting remain rejected.
+
+Remaining: connect and accept CRM interaction routes/input workflows before release, then implement manual drafts and follow-up delivery under the existing specifications. Successful live-Discord research delivery remains open; neither Phase 4a nor Phase 6 is accepted by these isolated tests. AGENTS.md remains local and ignored.
+
+Additional executed checks: `compileall -q src tests scripts` exited 0; `pip check` reported `No broken requirements found.`; `git diff --check` exited 0 with line-ending notices only.

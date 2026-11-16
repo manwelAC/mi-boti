@@ -4,6 +4,12 @@ Versions use MAJOR.MINOR.PATCH with annotated v tags. Releases before 1.0 are de
 
 ## Unreleased
 
+### Isolated contact review and CRM screens
+
+- Add source-proven public contact capture and supporting registry identifiers without guessed routes or merges.
+- Add unregistered native review/confirmation screens, long-review-text access, lead lists/details and note read/write adapters; keep CRM commands unavailable.
+- Reject null revision bypasses and harden literal email proof against partial/confusable matches and pathological page text. Verify bounded Unicode rendering and actor/expiry/policy/replay safeguards.
+
 ### Isolated manual CRM core
 
 - Record owner decision D16 permitting unreleased CRM development while the Phase 4a live-Discord gate stays open.

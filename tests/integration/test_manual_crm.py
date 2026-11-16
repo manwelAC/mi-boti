@@ -92,7 +92,7 @@ def test_invalid_qualification_rolls_back(database, case):
     assert list(database.connection.iterdump()) == before
 
 
-@pytest.mark.parametrize("case", ["ready-contact", "ready-evidence", "contact-attestation", "followup-due", "followup-naive", "outcome-note", "reopen-note", "stale"])
+@pytest.mark.parametrize("case", ["ready-contact", "ready-evidence", "contact-attestation", "followup-due", "followup-naive", "outcome-note", "reopen-note", "stale", "missing-revision"])
 def test_pipeline_prerequisites_reject_before_any_mutation(database, case):
     lead, evidence, contact = make_lead(database)
     source, target, options = "REVIEWING", "READY", dict(reviewed_evidence_ids=[evidence], contact_id=contact)
@@ -107,7 +107,7 @@ def test_pipeline_prerequisites_reject_before_any_mutation(database, case):
     database.connection.execute("UPDATE leads SET stage=? WHERE id=?", (source, lead["id"]))
     before = list(database.connection.iterdump())
     with pytest.raises(CrmError):
-        crm.transition(database, lead["id"], ACTOR, expected_revision=99 if case == "stale" else 1, target_stage=target, **options)
+        crm.transition(database, lead["id"], ACTOR, expected_revision=None if case == "missing-revision" else 99 if case == "stale" else 1, target_stage=target, **options)
     assert list(database.connection.iterdump()) == before
 
 
@@ -138,6 +138,7 @@ def test_notes_are_append_only_and_stale_or_cross_lead_corrections_fail(database
     correction = crm.add_note(database, lead["id"], ACTOR, expected_revision=2, body="Corrected observation.", supersedes_id=note["id"])
     assert note["body"] == database.connection.execute("SELECT body FROM lead_notes WHERE id=?", (note["id"],)).fetchone()[0]
     assert correction["supersedes_id"] == note["id"]
+    with pytest.raises(CrmError): crm.add_note(database, lead["id"], ACTOR, expected_revision=None, body="Missing revision")
     with pytest.raises(CrmError): crm.add_note(database, lead["id"], ACTOR, expected_revision=2, body="Stale")
     with pytest.raises(CrmError): crm.add_note(database, other["id"], ACTOR, expected_revision=1, body="Wrong lead", supersedes_id=note["id"])
     assert crm.list_records(database, lead_id=lead["id"], kind="lead_notes")["total"] == 2

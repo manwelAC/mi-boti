@@ -158,3 +158,24 @@ Owner explicitly approved Begin isolated CRM development while P4a successful li
 Added domain/crm.py, repositories/crm.py and services/crm.py plus integration/test_manual_crm.py. Core supports confirmed manual qualification with same-business public evidence/rationale and revision/identity guards, the full stage graph with READY contacts/manual-contact attestation/outcome/reopen requirements, atomic pending follow-ups, append-only note corrections and bounded named reads. Service injects fresh async authorization and rechecks persisted guild/channel/role policy inside transactions. Literal evidence hash validation is shared with research_integrity. No score/credit/provider/outreach writes or runtime data changes; no migration/dependency/bot registration. Full suite 680 passed, 361 existing SDK warnings in 59.57s; focused CRM/recovery 94 passed; compileall/pip check pass. Tests cover 64 independent graph pairs, invalid prerequisites, concurrency, immutable notes and backup/restore persistence.
 
 Next isolated work: reviewed contact capture, CRM confirmation/detail/list/notes UI adapters, then manual drafts/follow-up delivery/exports under existing specs. Contact rows can be validated/selected by the current READY guard but a production contact-entry workflow is not implemented. Confirmed service flags are not a substitute for actor-bound real Discord previews. Keep CRM guide entries/commands unavailable until wired and accepted. P4a successful live-Discord delivery remains open; no sample/secret input is needed for offline core work. v0.2.0 remains last tag; AGENTS stays local.
+
+## Isolated contact capture and CRM interaction verification — 2026-11-16
+
+Continued owner-authorized D16 development without registering CRM commands or changing production records. Added source-backed EMAIL/PHONE/WEBSITE contact capture, supporting registry identifiers, read-only previews and actor-bound expiring native Discord confirmations. Added bounded lead/detail/note views and full review-text access. Confirmation repeats authorization and revision checks; cancellation, replay and stale proposals cannot apply mutations. Explicit null revisions fail closed. Literal contact proof rejects guessed, partial and Unicode-confusable matches; URL paths remain exact without punctuation trimming. Shared contacts do not merge businesses. Qualification remains MANUAL with no score or hunt credit.
+
+Executed verification:
+
+```text
+.venv\Scripts\python.exe -m pytest -q
+723 passed, 514 warnings in 91.93s
+.venv\Scripts\python.exe -m pytest -q tests/integration/test_crm_interactions.py tests/integration/test_manual_crm.py
+135 passed, 153 warnings in 19.19s
+```
+
+The full suite preceded final contact-proof refinements; the focused result above covers those refinements and two additional exact-URL regressions. Do not interpret 723 as a final full-suite rerun. Warnings originate in discord.py's deprecated positional re.sub count. Tests use synthetic SQLite records and native Discord objects with simulated transport/authorization; no real Discord acceptance is claimed.
+
+Application files: src/mi_boti/repositories/crm.py, src/mi_boti/services/crm.py and new src/mi_boti/discord_app/crm.py. Tests: tests/integration/test_manual_crm.py and new tests/integration/test_crm_interactions.py. Documentation: README, CHANGELOG, docs 04/14/16/20/21/22 and DEVELOPMENT-HANDOFF. No migration, dependency, version/tag, runtime registration, provider call, autonomous hunting or outreach sending was added. Contact proof conservatively requires a literal saved observation (or exact observed website URL); inferred routes and unsupported formatting remain rejected.
+
+Remaining: connect and accept CRM interaction routes/input workflows before release, then implement manual drafts and follow-up delivery under the existing specifications. Successful live-Discord research delivery remains open; neither Phase 4a nor Phase 6 is accepted by these isolated tests. AGENTS.md remains local and ignored.
+
+Additional executed checks: `compileall -q src tests scripts` exited 0; `pip check` reported `No broken requirements found.`; `git diff --check` exited 0 with line-ending notices only.

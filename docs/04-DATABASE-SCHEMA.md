@@ -174,3 +174,7 @@ The existing singleton `guild_config.settings_json` contains `research_access`, 
 ## Isolated CRM persistence increment
 
 Manual qualification uses the existing leads, lead_events and business_events tables. Named review events retain selected evidence UUIDs and human rationale; the service validates all references against the same business before the transaction commits. Current_score_id stays null for this MANUAL path, and business origin fields remain immutable. Notes/corrections append to lead_notes and lead_events without updating old note text. Every note/stage mutation increments the lead revision to prevent lost concurrent edits. CONTACTED to FOLLOW_UP inserts its due record in the same transaction as stage/revision/event changes. No new table or SQL migration is needed; Discord exposure remains unreleased under D16.
+
+## Isolated contact persistence
+
+Reviewed contacts use existing business_contacts rows with the preserved value, normalized value, same-business evidence_id and observation provenance through evidence. Capture increments the business revision and appends named business_events/audit_events containing contact/evidence references and attribution rationale. Existing contact rows/provenance are not rewritten on duplicate capture. Supporting business_identifiers are added without strong identity_claims; shared contact routes never merge businesses. No schema migration is required. Contact capture, pipeline mutation and note mutation all reject an explicit null expected_revision as well as missing/invalid/stale revision values.
