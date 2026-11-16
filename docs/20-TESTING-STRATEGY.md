@@ -57,3 +57,7 @@ Marker-based publication reconciliation and the UNCERTAIN delivery tests are pos
 ## Phase 2 verification boundary
 
 Automated tests exercise the native discord.py command tree and persistent views, fake interactions and REST transport, and real SQLite setup journals. They cover command restrictions, preview confirmation, repeat setup, concurrent claims, partial failures, uncertain resource/publication holds, permission loss, restart routing and disabled workflows. These tests do not establish actual Discord permissions, delivery or rate-limit behavior. L01 remains a separate live gate; no opt-in live pytest plugin is implemented yet.
+
+## Research recovery verification increment
+
+T13/T16 now include research-specific backup/restore tests: retain full evidence rows and hashes, restore unfinished jobs/runs as INTERRUPTED, reject valid-FK but wrong-business/job/hash evidence, and verify that temporary WAL sidecars do not prevent normal private-root startup. A disposable child-process abrupt-exit drill separately exercises actual initialize/recovery against copied live-source test evidence. Read-only scripts/check_research_prerequisites.py checks migration ledger/version, SQLite/FK/research integrity, setup state and local research counts; it never proves site permission or live Discord acceptance and always reports full_phase4a_accepted:false.

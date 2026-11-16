@@ -4,6 +4,12 @@ Versions use MAJOR.MINOR.PATCH with annotated v tags. Releases before 1.0 are de
 
 ## Unreleased
 
+### Research recovery validation
+
+- Verify application-level research provenance and excerpt hashes as part of basic backup validation.
+- Seal copied/restored databases as standalone files and clean only their generated temporary sidecars, fixing a restored-data startup failure.
+- Add a read-only research checkpoint and recovery regressions; verify actual abrupt-process exit, backup/restore and interrupted startup without autonomous work.
+
 ### Guide maintenance and evidence reading
 
 - Add administrator-only /guide refresh:true to edit the existing managed guide card without provisioning or creating messages.

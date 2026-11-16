@@ -107,3 +107,11 @@ Configure research.user_agent locally with a descriptive contact reference; the 
 After restarting for the latest commands, run `/guide refresh:true` in guide as owner/administrator to update the old published guide card. This edits the existing bot-owned card only; it is not a setup operation. Missing cards still use reviewed /setup recovery.
 
 Use the dropdown on a research result to read a full stored excerpt, or `/research action:evidence evidence_id:<UUID> page:1`. Previous/Next controls read saved pages without another website request. Full source links, timestamps and limitations remain visible. The controls expire after ten minutes; reopen by evidence ID after expiry or restart.
+
+### Read-only research checkpoint
+
+```powershell
+.venv\Scripts\python.exe scripts/check_research_prerequisites.py
+```
+
+This reads the current local database without credentials, network, source dispatch or jobs. It checks schema/migration history, SQLite/FK consistency and research provenance/excerpt hashes. It reports local counts and unexpired review records without disclosing private record content. A local checkpoint pass does not prove website permission or real Discord delivery; full_phase4a_accepted remains false. Use --database with a disposable copy for diagnosis. Failed provenance/hash checks require investigation or a verified known-good restore, not editing evidence to force acceptance.

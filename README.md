@@ -44,7 +44,7 @@ The foundation and Discord integration are implemented, including a private oper
 | :--- | :--- |
 | Foundation | Implemented: configuration, private storage, logging, migrations and backup primitives |
 | Discord workspace | Implemented: private channels, authorization, confirmed provisioning and persistent panels |
-| Verification | **584 automated tests passed** on Windows / CPython 3.14.6; 341 upstream SDK warnings remain |
+| Verification | **591 automated tests passed** on Windows / CPython 3.14.6; 361 upstream SDK warnings remain |
 | Discovery & registry | Implemented & L03 verified: regional Geofabrik Philippines OSM extract importer (`pyosmium==4.3.2`) with subprocess-isolated parsing and immutable generation pointers, local SQLite snapshot adapter (`PhilippinesExtractAdapter`), transactional registry, versioned non-AI campaigns, deferred cross-database cursor acknowledgement, bounded worker & review resolution; manual local-source discovery can be explicitly enabled after snapshot preparation; public Overpass remains blocked |
 | Research & CRM | Non-AI `/research` supports confirmed site-access reviews, bounded collection and saved evidence; live Discord/business-site acceptance pending. CRM remains unavailable |
 | Identity review | Private `/lead` queue and registry inspection, with confirmed link/separate decisions; live Discord rendering pending |

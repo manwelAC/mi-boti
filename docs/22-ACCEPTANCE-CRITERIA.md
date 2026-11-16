@@ -827,3 +827,49 @@ Exit code 0 (line-ending notices only)
 ```
 
 Warnings remain discord.py escaping deprecations. New tests reconstruct the full saved text across pages, validate embed limits/mention escaping, deny stale/foreign/wrong-channel/revoked evidence controls, exercise evidence selection, and verify guide refresh does not create anything and refuses another author's message. Changed application files: discord_app/bot.py, guide.py, research.py, transport.py, new evidence.py and research/collector.py. Tests: fakes_discord.py, integration/test_discord_transport.py and new integration/test_evidence_reader.py. Updated README, CHANGELOG, docs 07/09/16/LOCAL-OPERATIONS, this record and DEVELOPMENT-HANDOFF. No migration, dependency, application-version bump or AI enablement. Real successful /research delivery and guide-refresh rendering in Discord remain pending; P4a is not declared complete and no real prospect is qualified by these tests.
+
+## Research backup/recovery checkpoint — 2026-11-16
+
+Added offline research-integrity validation to basic backup verification: evidence must belong to its research run's business, research runs must refer to RESEARCH jobs with matching business ownership when populated, successful/partial runs retain evidence, and literal excerpt hashes/metadata must match saved text. Existing SQLite FK checks alone cannot detect valid-FK wrong-business provenance or modified excerpt text. Copies failing these invariants are not published. Other evidence types without excerpt-hash metadata are not forced into the literal HTML format.
+
+A real disposable process drill found a restore-startup bug: verification of a WAL-mode temporary copy left .partial-wal and .partial-shm companions, and normal prepare_data_root correctly rejected those unrelated root files. Fixed both backup and restore by checkpointing/sealing the private output copy in DELETE journal mode before publication, with cleanup restricted to the generated temporary basename and its exact SQLite companions. The active source stays WAL. The regression explicitly reopens the restored directory through normal private-root preparation; source WAL and standalone backup DELETE modes are checked.
+
+Executed checks:
+
+```text
+.venv\Scripts\python.exe -m pytest -q
+591 passed, 361 warnings in 51.66s
+After explicit source/backup journal-mode assertions:
+.venv\Scripts\python.exe -m pytest -q tests/integration/test_research_recovery.py tests/integration/test_storage.py tests/integration/test_research_checkpoint.py
+23 passed in 1.86s
+.venv\Scripts\python.exe -m compileall -q src tests scripts
+Exit code 0
+.venv\Scripts\python.exe -m pip check
+No broken requirements found.
+```
+
+The process drill used a disposable copy of the earlier permitted live-source fixture, created/claimed a RESEARCH job and run in a child process, then deliberately called os._exit after its commit. The parent created a verified backup after that abrupt exit, restored into a different prepared root, and invoked normal initialize/recovery. First attempt failed on the sidecar bug above; the corrected rerun passed. Actual final output:
+
+```text
+fixture=.pytest_cache/research-recovery/f7616972fed74d26aff63fb1d42789a2
+committed_before_exit=true
+backup_sha256=fd92fef1a87d25cd0507d8a9fc63f7f5f2a49007a0f7801d7bbaab113e419d66
+backup_bytes=733184
+research_runs=3; evidence=2; excerpt_hashes=2
+original_evidence_unchanged=true
+access_reviews_unchanged=true; restored_review_records=1
+recovered_job=INTERRUPTED; recovered_run=INTERRUPTED
+running_jobs_after_restart=0
+temporary_sidecars_before_restart=[]
+network_or_provider_called=false; production_data_changed=false
+```
+
+Added scripts/check_research_prerequisites.py, a credential-free read-only checkpoint. Actual production-database output:
+
+```json
+{"checks":{"foreign_keys":true,"migration_history":true,"research_integrity":true,"schema_version":true,"setup_ready":true,"sqlite_quick_check":true},"evidence":0,"excerpt_hashes":0,"full_phase4a_accepted":false,"limitations":["Local records do not prove current Discord permissions, site access permission, HTTP compatibility or live delivery."],"local_checkpoint_passed":true,"mode":"read_only","research_runs":0,"unexpired_review_records":0,"unfinished_research_jobs":0}
+```
+
+No fixture records, credentials, source policies or bot operations were written into production. The computer-use skill was used to inspect existing Discord session availability/navigation. Native desktop input recovery reported coordinate input geometry is unavailable, then user input was detected in this window; desktop automation stopped without submitting slash commands or editing server content. Earlier owner reports verify missing-review rejection, AI-disabled rejection and wrong-channel restriction. Successful research/evidence delivery in real Discord remains unverified. T13/T16 research-local recovery checks now have automated and process-level evidence; this does not complete L01 or full P4a. CRM implementation has not started because its preceding phase remains unaccepted.
+
+Changed: storage/backup.py; new repositories/research_integrity.py and scripts/check_research_prerequisites.py; new integration/test_research_recovery.py and test_research_checkpoint.py. Updated README, CHANGELOG, docs 05/20/LOCAL-OPERATIONS, this acceptance record and DEVELOPMENT-HANDOFF. No SQL migration, dependency, version/tag change or AI enablement.

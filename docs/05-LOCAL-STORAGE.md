@@ -50,3 +50,11 @@ Use OS permissions limited to the local service account/owner. Warn before disk 
 ## Acceptance
 
 T14 attempts traversal/junction escapes and CSV formulas; T16 kills artifact writes and verifies orphan cleanup, full-disk behavior, consistent WAL backup, restore checks, retained identity, and no startup hunt. Backup files alone do not count as validated recovery until a restore exercise passes; see [20](20-TESTING-STRATEGY.md).
+
+## Research-aware backup verification — 2026-11-16
+
+Basic verified copies additionally validate same-business run/evidence provenance, RESEARCH job ownership, retained evidence for successful/partial runs, and literal excerpt SHA-256 metadata. A database can satisfy SQLite foreign keys while violating these application-level invariants; such copies must not be published as verified. Other evidence kinds without literal-excerpt hash metadata remain valid under their own contracts.
+
+Copies are produced through SQLite's online backup API, checkpointed and converted to DELETE journal mode before verification/publication, so the standalone file has no temporary WAL sidecar dependency. This follows SQLite's [WAL portability guidance](https://www.sqlite.org/wal.html). The active application database continues to use WAL. Cleanup touches only the generated temporary database basename and its exact -wal/-shm/-journal companions; it does not loosen data-root confinement. Restores remain new-file-only and never overwrite live data.
+
+A process-level disposable drill now covers abrupt exit with a committed RUNNING research job/run, verified backup, restore into a different prepared root, and normal initialize/recovery. Existing evidence must remain byte-for-byte unchanged, unfinished work becomes INTERRUPTED, and no worker/provider/network operation starts. This is separate from live Discord acceptance.

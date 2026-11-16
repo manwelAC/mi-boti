@@ -26,6 +26,23 @@ def _read_only(path: Path):
     return sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True, isolation_level=None)
 
 
+def _seal_copy(connection):
+    """Publish a standalone copy, without a WAL sidecar dependency."""
+    checkpoint = connection.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchone()
+    if checkpoint and checkpoint[0] != 0:
+        raise StorageError("Could not checkpoint the temporary database copy.")
+    if connection.execute("PRAGMA journal_mode=DELETE").fetchone()[0].lower() != "delete":
+        raise StorageError("Could not finalize a standalone database copy.")
+
+
+def _remove_temporary_database(path):
+    # Only our generated temporary filename and its exact SQLite companions.
+    for suffix in ("", "-wal", "-shm", "-journal"):
+        item = Path(str(path) + suffix)
+        reject_links(item)
+        item.unlink(missing_ok=True)
+
+
 def verify_copy(path: Path, *, expected_sha256: str | None = None, expected_guild: str | None = None) -> BackupInfo:
     reject_links(path)
     try:
@@ -38,6 +55,8 @@ def verify_copy(path: Path, *, expected_sha256: str | None = None, expected_guil
                 raise StorageError("Backup database integrity check failed.")
             if connection.execute("PRAGMA foreign_key_check").fetchall():
                 raise StorageError("Backup foreign-key check failed.")
+            from ..repositories.research_integrity import verify_research_integrity
+            verify_research_integrity(connection)
             version = connection.execute("PRAGMA user_version").fetchone()[0]
             has_binding = connection.execute("SELECT 1 FROM sqlite_master WHERE name='deployment' AND type='table'").fetchone()
             row = connection.execute("SELECT guild_id FROM deployment WHERE id=1").fetchone() if has_binding else None
@@ -67,6 +86,7 @@ def create_verified_copy(source: sqlite3.Connection, directory: Path, *, minimum
     try:
         with closing(sqlite3.connect(temporary, isolation_level=None)) as destination:
             source.backup(destination, pages=128, progress=progress, sleep=0.01)
+            _seal_copy(destination)
         with temporary.open("r+b") as handle:
             os.fsync(handle.fileno())
         verify_copy(temporary)
@@ -75,7 +95,7 @@ def create_verified_copy(source: sqlite3.Connection, directory: Path, *, minimum
     except (OSError, sqlite3.Error):
         raise StorageError("Could not create a verified database copy.") from None
     finally:
-        temporary.unlink(missing_ok=True)
+        _remove_temporary_database(temporary)
 
 
 def restore_verified_copy(info: BackupInfo, destination: Path, *, expected_guild: str, supported_version: int) -> None:
@@ -90,6 +110,7 @@ def restore_verified_copy(info: BackupInfo, destination: Path, *, expected_guild
     try:
         with closing(_read_only(info.path)) as source, closing(sqlite3.connect(temporary)) as output:
             source.backup(output)
+            _seal_copy(output)
         verify_copy(temporary, expected_guild=expected_guild)
         with temporary.open("r+b") as handle:
             os.fsync(handle.fileno())
@@ -99,4 +120,4 @@ def restore_verified_copy(info: BackupInfo, destination: Path, *, expected_guild
     except (OSError, sqlite3.Error):
         raise StorageError("Could not restore into the new data directory.") from None
     finally:
-        temporary.unlink(missing_ok=True)
+        _remove_temporary_database(temporary)
