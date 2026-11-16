@@ -90,3 +90,14 @@ Local extract discovery can now be explicitly enabled after preparation. Keep th
 After successful verification, enable only `[sources.philippines_extract]` in ignored config.toml and restart the bot through the existing local launcher. The approved fixed endpoint and current policy are validated; public Overpass, arbitrary sources and all AI providers stay blocked. In lead-discovery, use `/discover campaign_id:<saved campaign UUID> limit:10`. Only that authorized command registers observations. The command first returns a job receipt, then a result summary. Use `/lead` for ambiguity reviews. No AI, qualification or hunting is started. Website collection is Phase 4a, not part of this snapshot lookup.
 
 To reopen saved discovery output without searching again, use `/discover job_id:<job UUID>` in lead-discovery. The private results card lists up to ten observations per page and includes an inspection dropdown for source details. The controls expire after ten minutes; rerun the same command to reopen them. A new business is not a qualified lead, and snapshot assertions are not current website research.
+
+## Website research walkthrough
+
+Use business-research. Research is provider-free and never qualifies a lead or sends outreach.
+
+1. Choose a discovered business and identify its official public website. A missing URL is unknown; Mi Boti does not guess a domain. Inspect the site's terms/access policy for this intended collection.
+2. As owner/administrator, run `/research action:review business:<UUID> url:<official URL> permission_url:<same-host permission reference> rationale:<what permits this collection>`. Read and confirm the private preview. This records a seven-day review, not a fetch or a legal conclusion. Unavailable/disallowed robots policy still prevents collection.
+3. Run `/research business:<UUID> refresh:true`. It returns a job ID, then a saved-evidence card after bounded collection. Website observations are timestamped excerpts with limitations, not AI conclusions.
+4. Reopen with `/research action:status job_id:<UUID>`. Use `action:cancel job_id:<UUID>` to stop work. Administrators can `action:revoke business:<UUID>` to remove current access. Evidence already committed remains immutable.
+
+Configure research.user_agent locally with a descriptive contact reference; the ignored deployment config now uses the Mi Boti repository URL. No bot token is needed for local HTTP configuration. Restart the existing bot to synchronize the new /research options. No second bot or real-server setup was launched by development. Live Discord research remains a required owner check.

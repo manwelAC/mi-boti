@@ -185,7 +185,7 @@ class DiscordPort:
         from .views import PanelView
         channel = await self.api(self.guild.fetch_channel(int(channel_id)))
         embed = discord.Embed(title={"guide": "Tool guide", "dashboard": "Mi Boti", "hunt_progress": "Hunt control", "usage": "AI connections", "settings": "Server setup"}[key],
-                              description="Phase 2 infrastructure. Discovery, research, CRM, AI execution and hunting remain disabled. Use the assigned slash-command channels. No outreach is sent automatically.",
+                              description="Use assigned slash-command channels for discovery and reviewed website research. Source and access-policy gates apply. CRM, AI execution and hunting remain disabled. No outreach is sent automatically.",
                               color=0x4F9CF9)
         if key == "guide":
             from .guide import build_guide_embed

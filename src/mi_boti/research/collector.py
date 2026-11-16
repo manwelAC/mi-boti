@@ -1,12 +1,14 @@
 """Bounded, explicitly reviewed website collection; never analyzes or qualifies."""
 
 import asyncio
+from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
 import ipaddress
 import re
 import socket
+import threading
 import time
 from urllib.parse import urljoin, urlsplit, urlunsplit
 from urllib.robotparser import RobotFileParser
@@ -94,23 +96,50 @@ class WebsiteCollector:
     This staged engine has no Discord admission or database writes. Only explicit
     collect calls may use the network, and each needs a reviewed exact hostname.
     """
-    def __init__(self, user_agent, *, resolver=None, transport=None, interval=2.0):
+    def __init__(self, user_agent, *, resolver=None, transport=None, interval=2.0, limits=None):
         if not user_agent.strip() or any(c in user_agent for c in "\r\n\x00"):
             raise ResearchError("Configure a descriptive research user-agent/contact first.")
         if interval < 2:
             raise ResearchError("Website request spacing must be at least two seconds.")
         self.user_agent, self.resolver, self.transport = user_agent, resolver, transport
         self.interval = interval
+        self.limits = limits or {}
+        self.dispatch_check = ContextVar("research_dispatch_check", default=None)
         self.hosts = {}
         self.robots = {}
         self.dns_slots = asyncio.Semaphore(2)
+        self.resolver_threads = set()
+        self.resolver_guard = threading.Lock()
 
     async def _resolve(self, host, port):
         await self.dns_slots.acquire()
         async def resolve():
             if self.resolver:
                 return await self.resolver(host, port)
-            return await asyncio.get_running_loop().getaddrinfo(host, port, type=socket.SOCK_STREAM)
+            loop = asyncio.get_running_loop()
+            future = loop.create_future()
+            def complete(infos, error):
+                if future.done(): return
+                if error: future.set_exception(error)
+                else: future.set_result(infos)
+            def worker():
+                infos, error = None, None
+                try:
+                    infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+                except OSError:
+                    error = ResearchError("Could not resolve the website hostname.")
+                finally:
+                    with self.resolver_guard:
+                        self.resolver_threads.discard(threading.current_thread())
+                try:
+                    loop.call_soon_threadsafe(complete, infos, error)
+                except RuntimeError:
+                    pass  # Application loop closed; daemon resolver cannot delay shutdown.
+            thread = threading.Thread(target=worker, name="mi-boti-research-dns", daemon=True)
+            with self.resolver_guard:
+                self.resolver_threads.add(thread)
+            thread.start()
+            return await future
         task = asyncio.create_task(resolve())
         # Retain admission until the underlying resolver actually finishes.
         def finished(done):
@@ -129,18 +158,24 @@ class WebsiteCollector:
         url, host = safe_url(url)
         if host != review.host:
             raise ResearchSafetyError("Redirect or link leaves the reviewed website hostname.")
+        check = self.dispatch_check.get()
+        if check is not None and await check() is not True:
+            raise ResearchError("Research dispatch authorization was denied.")
         if budget[0] <= 0: raise ResearchError("Research request budget exhausted.")
         budget[0] -= 1
         if host not in self.hosts:
             if len(self.hosts) >= 64: raise ResearchError("Website host admission is full.")
             self.hosts[host] = [asyncio.Lock(), 0.0]
         state = self.hosts[host]
-        async with asyncio.timeout(10):
+        async with asyncio.timeout(min(10, self.limits.get("research.timeout_seconds", 10))):
             async with state[0]:
                 await asyncio.sleep(max(0, state[1] - time.monotonic()))
-                state[1] = time.monotonic() + max(self.interval, delay)
                 ip = await self._resolve(host, urlsplit(url).port or (443 if url.startswith("https:") else 80))
                 pinned, ascii_host = format_pinned_url(url, ip)
+                if check is not None:
+                    if await check() is not True:
+                        raise ResearchError("Research dispatch authorization was denied.")
+                state[1] = time.monotonic() + max(self.interval, delay)
                 async with httpx.AsyncClient(transport=self.transport, trust_env=False, follow_redirects=False, timeout=10) as client:
                     async with client.stream("GET", pinned, headers={"Host": ascii_host, "User-Agent": self.user_agent,
                                               "Accept-Encoding": "identity", "Accept": "text/html,text/plain"},
@@ -161,7 +196,7 @@ class WebsiteCollector:
                         chunks, size = [], 0
                         async for chunk in response.aiter_bytes():
                             size += len(chunk)
-                            if size > 2097152: raise ResearchError("Website response exceeded the body limit.")
+                            if size > min(2097152, self.limits.get("research.max_body_bytes", 2097152)): raise ResearchError("Website response exceeded the body limit.")
                             chunks.append(chunk)
                         return 200, response.headers, b"".join(chunks)
 
@@ -193,12 +228,14 @@ class WebsiteCollector:
                 raise ResearchError("Robots request rate is not supported by this parser.")
         robots = RobotFileParser()
         robots.parse(text.splitlines())
-        self.robots[cache_key] = (time.monotonic() + 86400, robots)
+        self.robots = {key: value for key, value in self.robots.items() if key[0] != origin and value[0] > time.monotonic()}
+        self.robots[cache_key] = (time.monotonic() + min(86400, self.limits.get("research.robots_ttl_seconds", 86400)), robots)
         return robots
 
     async def _page(self, url, review, budget):
         original = url
-        for redirect in range(4):
+        max_redirects = min(3, self.limits.get("research.max_redirects", 3))
+        for redirect in range(max_redirects + 1):
             url, host = safe_url(url)
             if host != review.host: raise ResearchSafetyError("Website redirect leaves the reviewed host.")
             robots = await self._robots(url, review, budget)
@@ -208,18 +245,26 @@ class WebsiteCollector:
             if rate: delay = max(delay, rate.seconds / rate.requests)
             status, headers, raw = await self._request(url, review, budget, delay=delay)
             if status != 200:
-                if redirect == 3 or "location" not in headers: raise ResearchError("Website redirect limit exceeded.")
+                if redirect == max_redirects or "location" not in headers: raise ResearchError("Website redirect limit exceeded.")
                 next_url = urljoin(url, headers["location"])
                 if url.startswith("https:") and not next_url.startswith("https:"):
                     raise ResearchSafetyError("HTTPS downgrade redirect is prohibited.")
                 url = next_url
                 continue
             text, links = extract(raw, url, headers.get("content-type", ""))
+            text = text[:min(20000, self.limits.get("research.max_text_chars", 20000))]
             if not text: raise ResearchError("Website contained no usable public text.")
             return PageObservation(original, url, utc_now(), text, hashlib.sha256(text.encode()).hexdigest(),
                                    review.policy_version, ("Public page excerpt; not independently verified and not proof of internal software.",)), links
 
-    async def collect(self, url, review, *, max_pages=5):
+    async def collect(self, url, review, *, max_pages=5, authorize=None):
+        token = self.dispatch_check.set(authorize)
+        try:
+            return await self._collect(url, review, max_pages=max_pages)
+        finally:
+            self.dispatch_check.reset(token)
+
+    async def _collect(self, url, review, *, max_pages):
         review.validate(datetime.now(timezone.utc))
         url, host = safe_url(url)
         if host != review.host or type(max_pages) is not int or not 1 <= max_pages <= 5:
@@ -238,8 +283,9 @@ class WebsiteCollector:
                                 if link not in plan: plan.append(link)
                     except ResearchSafetyError:
                         return Collection("FAILED", (), 32 - budget[0], ("Critical URL/DNS/redirect policy violation blocked collection.",))
-                    except (ResearchError, AppError, httpx.HTTPError, TimeoutError):
-                        limitations.append("A planned page could not be safely collected; its contents and internal systems remain unknown.")
+                    except (AppError, httpx.HTTPError, TimeoutError) as error:
+                        reason = str(error) if isinstance(error, AppError) else "Website request failed or timed out."
+                        limitations.append(reason + " Page contents and internal systems remain unknown.")
         except TimeoutError:
             limitations.append("Collection reached its total time limit.")
         return Collection("PARTIAL" if pages and limitations else "SUCCEEDED" if pages else "FAILED", tuple(pages), 32 - budget[0], tuple(limitations))

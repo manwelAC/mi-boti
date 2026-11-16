@@ -12,7 +12,7 @@ def test_guide_covers_every_command_and_resolves_current_channel_ids():
     assert len(embed)<=6000 and len(embed.description)<=4096 and len(embed.fields)<=25
     assert all(len(f.name)<=256 and len(f.value)<=1024 for f in embed.fields)
     assert "Disabled" in next(f.value for f in embed.fields if f.name.startswith('/discover '))
-    assert "Planned" in next(f.value for f in embed.fields if f.name.startswith('/research '))
+    assert "Implemented" in next(f.value for f in embed.fields if f.name.startswith('/research '))
 
 
 def test_missing_mapping_and_enabled_discovery_are_reported_without_claiming_ai_ready():

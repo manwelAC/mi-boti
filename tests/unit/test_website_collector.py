@@ -112,3 +112,50 @@ def test_cancellation_keeps_dns_admission_until_resolver_finishes():
         for _ in range(5): await asyncio.sleep(0)
         assert collector.dns_slots._value == 2
     asyncio.run(run())
+
+
+def test_native_dns_is_bounded_daemon_work_and_cancellation_does_not_release_it_early(monkeypatch):
+    import threading
+    entered, release = threading.Event(), threading.Event()
+    def blocking_dns(host, port, **kwargs):
+        entered.set()
+        release.wait(5)
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", port))]
+    monkeypatch.setattr(socket, "getaddrinfo", blocking_dns)
+    async def run():
+        collector = WebsiteCollector("MiBoti/contact@example.org")
+        task = asyncio.create_task(collector._resolve("public.example", 443))
+        try:
+            async with asyncio.timeout(1):
+                while not entered.is_set(): await asyncio.sleep(.01)
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError): await task
+            assert collector.dns_slots._value == 1
+            assert len(collector.resolver_threads) == 1
+            assert all(t.daemon for t in collector.resolver_threads)
+        finally:
+            release.set()
+            async with asyncio.timeout(1):
+                while collector.dns_slots._value != 2: await asyncio.sleep(.01)
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("deny_after_dns", [False, True])
+def test_authorization_is_checked_before_and_after_dns(deny_after_dns):
+    checks, lookups, requests = [], [], []
+    async def authorize():
+        checks.append(True)
+        return deny_after_dns and len(checks) == 1
+    async def dns(host, port):
+        lookups.append(host)
+        return await resolve(host, port)
+    async def handler(request):
+        requests.append(request)
+        raise AssertionError("Denied research cannot dispatch HTTP.")
+    async def run():
+        collector = WebsiteCollector("MiBoti/contact@example.org", resolver=dns, transport=httpx.MockTransport(handler))
+        result = await collector.collect("https://public.example/", review(), max_pages=1, authorize=authorize)
+        assert result.state == "FAILED"
+        assert len(lookups) == int(deny_after_dns)
+        assert not requests
+    asyncio.run(run())

@@ -716,3 +716,60 @@ Exit code 0 (line-ending notices only)
 ```
 
 The warnings remain existing discord.py deprecations. Tests use simulated DNS/HTTP; no business website was fetched and no live OS/TLS collector verification was claimed. Provider-free architecture and zero score/lead/quota writes are verified at the module/repository boundary; full runtime provider-spy coverage is still pending integration. No schema change or new dependency. Research stays unavailable from Discord: durable worker/admission/cancellation/recovery, persisted reviewed-site policies, configuration-driven runtime limits, UI and live research checks are pending. This increment does not complete P4a or waive remaining P3 live acceptance. New modules are staged library code, not a production-ready fetch release.
+
+## Phase 4a Discord research integration — 2026-11-16
+
+Implemented /research collect/status/cancel/review/revoke using the existing canonical research command and business-research mapping. Site-access review is administrator-only, actor-bound, expires after five minutes as a confirmation, compares config revision and records an exact-host seven-day named policy/rationale. Current reviews live in guild_config.settings_json.research_access (at most 64), with full audit history on edits and revocation. The saved URL is explicit and never guessed. An empty research.user_agent blocks collection; the ignored deployment config now uses the repository's descriptive contact URL. No credential was read or changed.
+
+Research admission requires explicit refresh and analyze:false, resolved identity, current access review and available background-job slots. Replayed interactions reuse the original job without another fetch. Shared async collection runs outside the SQLite owner; each dispatch checks authorization/policy/lease after DNS. Monitoring polls persisted policy/cancellation once per second and Discord authorization at the heartbeat interval. Final evidence/run/job success is atomic and validates the access-policy version/host inside the transaction. Cancel/revoke/role loss abort collection before failure settlement; shutdown and startup recovery mark queued/running research and unfinished runs INTERRUPTED without auto-resume. Native DNS uses at most two admitted daemon workers; cancellation retains a DNS slot until the resolver really finishes, so stalled OS resolution cannot accumulate work or delay process shutdown.
+
+Executed final automated verification:
+
+```text
+.venv\Scripts\python.exe -m pytest -q
+572 passed, 261 warnings in 48.82s
+.venv\Scripts\python.exe -m compileall -q src tests
+Exit code 0
+.venv\Scripts\python.exe -m pip check
+No broken requirements found.
+git diff --check
+Exit code 0 (line-ending notices only)
+```
+
+The warnings remain upstream discord.py escaping deprecations. New workflow cases cover success, immutable refresh, idempotent replay, cancellation, access revoke/version change, permission loss, shutdown, restart of queued/running jobs, AI denial, missing policy, wrong channel, and wrong-actor/expired/stale/ordinary-member review confirmations. Success/failure paths use subprocess/API spies that fail if a CLI or incidental HTTP client is invoked outside the collector, and assert no findings, scores, leads or credits. Collector tests additionally prove pinned IPv4/IPv6, mixed-DNS/rebinding rejection, robots/MIME/body/redirect controls, and retained admission for cancelled native DNS.
+
+Real collector probe against the documented public HTTP test service [HTTPBin](https://httpbin.org/) and its [robots policy](https://httpbin.org/robots.txt):
+
+```text
+state=SUCCEEDED, requests=2, pages=1
+observed_at=2026-11-16T08:00:31.875790Z
+excerpt_sha256=b04ac75624cb829db0e502fc04d2758ba7de1dd4531467b80d7cd62a5137ccfb
+limitations=[]
+```
+
+A second explicit probe exercised durable admission, a real collector and evidence commit in disposable fixture .pytest_cache/live-research/9caf1d48111c4d7ba66ca248710d69c5 (production registry untouched):
+
+```text
+job_state=SUCCEEDED; error_code=null; requests=2
+run_id=a44fe9cd-788c-48d7-9dd9-f4a85cff0446
+evidence_id=ce5049c1-0277-4faf-932f-8a14c1d3a276
+research_runs=1; evidence=1; findings=0; scores=0; leads=0; hunt_credits=0
+Discord authorization=simulated; not live L01
+```
+
+The first full-pipeline fixture attempt lacked a guild_config row and stopped before any fetch. The fixture setup was corrected and prepare_access now reports missing setup safely. Technical fixture policies were developer-only and never installed into production or represented as owner approval for a business. Real HTTP transport evidence does not complete real Discord/business-site acceptance. The first ten saved production observations contain no website URL; an explicit official URL and access review are still required for that check. No production review, research job, evidence record or real Discord resource was created by development.
+
+Changed application files: discord_app/bot.py, guide.py, transport.py and new research.py; jobs/discovery.py and new jobs/research.py; repositories/research.py and new research_access.py; research/collector.py. Tests: new integration/test_research_workflow.py, extended unit/test_website_collector.py, updated unit/test_operator_guide.py. Updated README, CHANGELOG, docs 04/07/09/17/21/23/LOCAL-OPERATIONS, this record and DEVELOPMENT-HANDOFF. No SQL migration, added dependency, application-version bump or AI/provider enablement. Remaining limits: conservative compression/robots rejection, one attempt/page within configured maximum, 32 requests/120 seconds per collection, 64 reviewed businesses/host admissions, evidence-card previews rather than full-text export. P4a and remaining P3 live acceptance remain open pending owner-driven checks.
+
+Final documentation/authority spot check (file targets only; anchor IDs and the full historical command/schema/scoring audit were not rerun):
+
+```text
+AGENTS sections 1-22 SHA256: 3c139ab0bdbb9a434d587f2ca45f3ba117963a19bce5fd9e362bf7747aeaf259
+{"markdown_files": 28, "relative_targets_checked": 302, "missing_file_targets": []}
+git ls-files AGENTS.md: (no output)
+git check-ignore AGENTS.md: AGENTS.md
+```
+
+The final collector guard tests additionally deny access before DNS and again after DNS, with zero HTTP dispatch. The final executed full-suite result is 572 passed, 261 warnings in 48.82s.
+
+Owner clarified that no sample website is available. A read-only web lookup identified [Max's official brand site](https://maxschicken.com/) as a candidate corresponding to the discovered brand name. This does not establish branch-specific identity or automated-access permission. The browsing tool could not verify its robots URL, and no adequate same-host automation permission reference was established, so no production access review or business collection was approved. Do not treat this lookup as Mi Boti research evidence or a passed business-site live check.

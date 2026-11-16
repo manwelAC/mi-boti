@@ -18,7 +18,7 @@ COMMAND_HELP = {
     "hunt.pause": ("Pause a hunt", "Future tool: request a safe checkpoint pause. Currently unavailable.", "planned"),
     "hunt.resume": ("Resume a hunt", "Future tool: explicitly resume after authorization, allowance and budget checks. Currently unavailable.", "planned"),
     "hunt.stop": ("Stop a hunt", "Future tool: stop and receive an accurate partial summary. Currently unavailable.", "planned"),
-    "research": ("Collect website evidence", "Future non-AI tool: preserve public observations, source URLs, timestamps and limitations. A missing booking link is not proof of no booking system.", "planned"),
+    "research": ("Collect website evidence", "Admin: `/research action:review business:<UUID> url:<official URL> permission_url:<terms URL> rationale:<review>` then confirm. Collect with `business:<UUID> refresh:true`. Use `action:status` or `action:cancel job_id:<UUID>`; admin `action:revoke` removes access. Exact-host permission and robots checks apply. AI remains disabled.", "campaign"),
     "qualified": ("Review qualified prospects", "Future tool: list qualified leads with supporting evidence. Discovered businesses are not automatically qualified.", "planned"),
     "leads": ("Browse the CRM", "Future tool: list pipeline records and stages. Discovery alone does not create CRM leads.", "planned"),
     "lead": ("Inspect registry identities", "Use /lead for the open review queue, or /lead id:<UUID> for a review/business. To resolve a review, supply action:link target:<business UUID> rationale:<reason>, or action:separate rationale:<reason>, then confirm within five minutes. No lead or quota credit is created. CRM notes, evidence and qualification remain unavailable.", "ready"),

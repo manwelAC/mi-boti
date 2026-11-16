@@ -43,6 +43,7 @@ class MiBotiClient(discord.Client):
         self.port = port_factory(self, settings)
         self.setup_service = SetupService(database, self.port, settings)
         self.discovery_source_factory = discovery_source_factory or self._default_discovery_source
+        self.research_collector = None
         self.tasks = set()
         self._register_commands()
         self.tree.on_error = self.command_error
@@ -237,7 +238,7 @@ class MiBotiClient(discord.Client):
         if command in {"usage", "connections"}:
             return "No AI provider is verified or enabled. AGY allowance compatibility remains blocked; no capacity estimate is invented. No CLI task or paid API has been called."
         discovery = "Local snapshot discovery is enabled; use /discover in its assigned channel." if self.settings.safe_summary()["discovery_enabled"] else "Discovery is disabled until the approved local snapshot is prepared and enabled."
-        return "Hunting is disabled and no hunt worker is running. " + discovery + " Live website research, scoring and CRM workflows are not implemented yet."
+        return "Hunting is disabled and no hunt worker is running. " + discovery + " Website research requires a current administrator-reviewed site policy; use /research in its assigned channel. AI analysis, scoring and CRM remain disabled."
 
     @staticmethod
     def _role_ids(value):
@@ -493,6 +494,13 @@ class MiBotiClient(discord.Client):
                            job_id: str | None = None, page: int = 1):
             await self.operation(interaction, "discover", options_dict={"campaign_id": campaign_id, "limit": limit, "job_id": job_id, "page": page})
         self.tree.add_command(app_commands.Command(name="discover", description="Run bounded non-AI business discovery for an approved campaign", callback=discover), guild=guild)
+        async def research(interaction: discord.Interaction, business: str | None = None, refresh: bool = False, analyze: bool = False,
+                           action: Literal["collect", "status", "cancel", "review", "revoke"] = "collect", job_id: str | None = None,
+                           url: str | None = None, permission_url: str | None = None, rationale: str | None = None):
+            from .research import operation
+            await operation(self, interaction, business=business, refresh=refresh, analyze=analyze, action=action,
+                            job_id=job_id, url=url, permission_url=permission_url, rationale=rationale)
+        self.tree.add_command(app_commands.Command(name="research", description="Collect reviewed public website evidence without AI, or inspect saved research", callback=research), guild=guild)
         async def lead(interaction: discord.Interaction, id: str | None = None, page: int = 1,
                        action: Literal["inspect", "link", "separate"] = "inspect",
                        target: str | None = None, rationale: str | None = None):
@@ -500,7 +508,7 @@ class MiBotiClient(discord.Client):
             await show_lead(self, interaction, identifier=id, page=page, action=action, target=target, rationale=rationale)
         self.tree.add_command(app_commands.Command(name="lead", description="Inspect registry records and confirm identity reviews", callback=lead), guild=guild)
         for key in COMMAND_CHANNELS:
-            if "." not in key and key not in {"guide", "setup", "config", "connections", "discover", "lead"}:
+            if "." not in key and key not in {"guide", "setup", "config", "connections", "discover", "lead", "research"}:
                 self.tree.add_command(self._placeholder(key, key), guild=guild)
 
     def _placeholder(self, name, key):

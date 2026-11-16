@@ -338,13 +338,15 @@ def recover_interrupted_work(db, *, now: str | None = None) -> dict:
 
         interrupted_jobs = c.execute(
             "UPDATE jobs SET state='INTERRUPTED', lease_token=NULL, lease_expires_at=NULL, updated_at=?, error_code='RESTART_INTERRUPTION' "
-            "WHERE state='RUNNING' OR (hunt_id IS NOT NULL AND state IN ('QUEUED','RETRY_WAIT'))",
+            "WHERE state='RUNNING' OR ((hunt_id IS NOT NULL OR kind='RESEARCH') AND state IN ('QUEUED','RETRY_WAIT'))",
             (stamp,),
         ).rowcount
         c.execute(
             "UPDATE discovery_queries SET state='FAILED', finished_at=?, error_code='RESTART_INTERRUPTION' WHERE state IN ('QUEUED','RUNNING')",
             (stamp,),
         )
+        c.execute("UPDATE research_runs SET state='INTERRUPTED',finished_at=?,limitations_json=? WHERE state IN ('QUEUED','RUNNING')",
+                  (stamp, json.dumps(["Research interrupted by restart; explicit refresh is required."])))
         return {"interrupted_hunts": interrupted_hunts, "interrupted_jobs": interrupted_jobs}
 
 

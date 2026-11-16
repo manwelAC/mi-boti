@@ -4,10 +4,16 @@ Versions use MAJOR.MINOR.PATCH with annotated v tags. Releases before 1.0 are de
 
 ## Unreleased
 
+### Non-AI research workflow
+
+- Connect /research to durable background jobs and immutable evidence cards, with explicit refresh, saved status, cancellation and restart interruption.
+- Add administrator-confirmed seven-day exact-host website-access reviews and revocation with audit history. Recheck current authorization, leases and policy before each fetch and final commit; keep AI analysis disabled.
+- Verify real HTTP collection against HTTPBin in a disposable SQLite fixture; real Discord/business-site acceptance remains pending.
+
 ### Staged research foundation
 
 - Replace empty discovery addresses and raw limitation arrays with readable text.
-- Add a provider-free website collection engine and immutable research/evidence repository with safety and provenance tests. This is not yet wired into /research; live website collection remains unavailable pending job/policy integration and live validation.
+- Add a provider-free website collection engine and immutable research/evidence repository with safety and provenance tests. The subsequent runtime integration is recorded above; real Discord/business-site validation remains pending.
 
 ### Discovery results browsing
 

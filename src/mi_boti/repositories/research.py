@@ -38,7 +38,7 @@ def begin_run(db, job_id, lease_token):
     return run_id
 
 
-def finish_run(db, run_id, lease_token, collection):
+def finish_run(db, run_id, lease_token, collection, *, settle_job=False):
     if collection.state not in {"SUCCEEDED", "PARTIAL", "FAILED"} or not 0 <= collection.requests <= 32 or len(collection.pages) > 5:
         raise ResearchError("Invalid research result envelope.")
     if (collection.state == "FAILED") == bool(collection.pages):
@@ -50,9 +50,18 @@ def finish_run(db, run_id, lease_token, collection):
         if not run: raise ResearchError("Research run is absent or already settled.")
         job, payload = _job(c, run["job_id"], lease_token, now)
         if payload["business_id"] != run["business_id"]: raise ResearchError("Research run business changed.")
+        if settle_job:
+            from .research_access import get_access
+            current = get_access(db, run["business_id"])
+            if current["review"]["policy_version"] != payload["policy_version"]:
+                raise ResearchError("Website-access review changed before evidence commit.")
         for page in collection.pages:
             safe_url(page.source_url)
             safe_url(page.final_url)
+            if settle_job and (safe_url(page.source_url)[1] != current["review"]["host"]
+                               or safe_url(page.final_url)[1] != current["review"]["host"]
+                               or page.policy_version != current["review"]["policy_version"]):
+                raise ResearchError("Evidence does not match the reviewed website policy.")
             try:
                 observed = datetime.strptime(page.observed_at, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
                 if observed > datetime.now(timezone.utc): raise ValueError
@@ -69,5 +78,9 @@ def finish_run(db, run_id, lease_token, collection):
             evidence_ids.append(identifier)
         c.execute("UPDATE research_runs SET state=?,finished_at=?,limitations_json=? WHERE id=?",
                   (collection.state, now, json.dumps(collection.limitations), run_id))
-        # Job settlement belongs to the scheduler, after this atomic checkpoint.
+        if settle_job:
+            c.execute("UPDATE jobs SET state=?,progress_json=?,error_code=?,updated_at=?,lease_token=NULL,lease_expires_at=NULL WHERE id=?",
+                      ("FAILED" if collection.state == "FAILED" else "SUCCEEDED",
+                       json.dumps({"run_id": run_id, "research_state": collection.state, "evidence_ids": evidence_ids, "requests": collection.requests}),
+                       "RESEARCH_NO_EVIDENCE" if collection.state == "FAILED" else None, now, job["id"]))
     return tuple(evidence_ids)
