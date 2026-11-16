@@ -61,3 +61,7 @@ Automated tests exercise the native discord.py command tree and persistent views
 ## Research recovery verification increment
 
 T13/T16 now include research-specific backup/restore tests: retain full evidence rows and hashes, restore unfinished jobs/runs as INTERRUPTED, reject valid-FK but wrong-business/job/hash evidence, and verify that temporary WAL sidecars do not prevent normal private-root startup. A disposable child-process abrupt-exit drill separately exercises actual initialize/recovery against copied live-source test evidence. Read-only scripts/check_research_prerequisites.py checks migration ledger/version, SQLite/FK/research integrity, setup state and local research counts; it never proves site permission or live Discord acceptance and always reports full_phase4a_accepted:false.
+
+## Isolated T12 core increment
+
+The D16-authorized offline CRM tests enumerate all 64 stage pairs against an independently encoded contract, check prerequisite failures/rollback, stale revisions, same-business public evidence/hash/time validation, unique manual qualification with a two-connection race, immutable note corrections and stage/history persistence through backup/restore. Service tests inject fresh authorization and independently check persisted channel/readiness/role policy and explicit confirmation, with network/provider spies and no Discord registration. This validates the isolated core, not full T12/P6 acceptance: contact capture, real Discord confirmation/rendering, manual drafts, reminders, exports and live acceptance remain pending.

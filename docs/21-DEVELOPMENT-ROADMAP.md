@@ -127,3 +127,9 @@ Following the owner's approval in [docs/PHILIPPINES-EXTRACT-PLAN.md](PHILIPPINES
 ## Phase 4a runtime checkpoint — 2026-11-16
 
 The non-AI research command, persisted administrator-confirmed site-access reviews, background admission/leases/monitoring, cancellation/revocation/restart handling and immutable saved-evidence receipts are implemented. Existing configuration/evidence tables are reused. A bounded real HTTPBin transport probe and a disposable worker/evidence pipeline succeeded; these establish real HTTP collection, not real Discord research acceptance or permission to fetch arbitrary businesses. Continue with a reviewed official business URL and owner-run /research verification. Full P4a acceptance and remaining P3 live acceptance are not marked complete; AI/scoring/hunting remain disabled.
+
+## Owner-authorized isolated CRM development — 2026-11-16
+
+Decision D16 records the owner's explicit approval to begin isolated, unreleased non-AI CRM development while the successful Phase 4a live-Discord research check remains open. This is a sequencing exception for development only. It does not accept Phase 4a/6, enable CRM commands, change the no-AI/no-quota/no-outreach safeguards or authorize later autonomous phases.
+
+The first isolated increment is a domain/repository/service core for manual qualification, pipeline transitions, append-only notes and bounded reads. Authorization is injected freshly and persisted role/channel/readiness checks run inside transactions. Discord confirmations/rendering, reviewed contact entry, reminder delivery, exports and manual drafts remain subsequent work. Public UI availability must remain truthful while implementation proceeds.

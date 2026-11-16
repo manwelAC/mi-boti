@@ -873,3 +873,36 @@ Added scripts/check_research_prerequisites.py, a credential-free read-only check
 No fixture records, credentials, source policies or bot operations were written into production. The computer-use skill was used to inspect existing Discord session availability/navigation. Native desktop input recovery reported coordinate input geometry is unavailable, then user input was detected in this window; desktop automation stopped without submitting slash commands or editing server content. Earlier owner reports verify missing-review rejection, AI-disabled rejection and wrong-channel restriction. Successful research/evidence delivery in real Discord remains unverified. T13/T16 research-local recovery checks now have automated and process-level evidence; this does not complete L01 or full P4a. CRM implementation has not started because its preceding phase remains unaccepted.
 
 Changed: storage/backup.py; new repositories/research_integrity.py and scripts/check_research_prerequisites.py; new integration/test_research_recovery.py and test_research_checkpoint.py. Updated README, CHANGELOG, docs 05/20/LOCAL-OPERATIONS, this acceptance record and DEVELOPMENT-HANDOFF. No SQL migration, dependency, version/tag change or AI enablement.
+
+## Owner-approved isolated CRM core — 2026-11-16
+
+The owner explicitly selected Begin isolated CRM development after being asked about the open Phase 4a successful live-Discord check. Recorded FINAL decision D16 in README and a roadmap sequencing exception. Local ignored AGENTS.md adds the owner exception after the mandatory sections; sections 1–22 remain byte-identical with SHA-256 3c139ab0bdbb9a434d587f2ca45f3ba117963a19bce5fd9e362bf7747aeaf259. This permits development only, not release or Phase 4a/6 acceptance.
+
+Implemented domain/crm.py, repositories/crm.py and services/crm.py. Manual qualification validates current business revision, unresolved identity holds, one-to-ten distinct source-linked same-business evidence records, nonempty human rationale and evidence excerpt/time integrity. It creates exactly one MANUAL/NEW lead with null score, records named evidence/rationale and updates business disposition/revision without touching origin ownership, scores, findings or hunt credits. It makes no automatic claim about business software needs. Independent competing SQLite writers cannot create duplicate leads.
+
+The pipeline implements the complete documented graph. READY requires explicitly reviewed evidence plus an existing source-backed contact; CONTACTED requires operator attestation of manual contact; FOLLOW_UP creates a future UTC PENDING due item atomically; outcomes/reopening require notes. Notes and corrections append with named author/time, validate same-lead correction references and increment lead revision. Stage/note mutations do not silently overwrite stale revisions or alter business qualification disposition. Reads provide business names and bounded ten-record lead/note/event pages.
+
+ManualCrmService requires an injected fresh asynchronous authorizer and explicit confirmation for qualification/transitions. Within each transaction it repeats persisted guild/readiness/channel/resource/operator-grant checks. The service does not itself obtain Discord membership; the eventual adapter must bind the live interaction and supply real fresh authorization. This is not yet a Discord preview/confirmation implementation. All CRM command placeholders remain disabled and no runtime data was changed.
+
+Executed checks:
+
+```text
+Focused isolated CRM and research recovery tests:
+94 passed in 6.61s
+.venv\Scripts\python.exe -m pytest -q
+680 passed, 361 warnings in 59.57s
+.venv\Scripts\python.exe -m compileall -q src tests scripts
+Exit code 0
+.venv\Scripts\python.exe -m pip check
+No broken requirements found.
+git diff --check
+Exit code 0 (line-ending notices only)
+AGENTS mandatory prefix SHA256:
+3c139ab0bdbb9a434d587f2ca45f3ba117963a19bce5fd9e362bf7747aeaf259
+git check-ignore AGENTS.md
+AGENTS.md
+```
+
+Warnings are the existing upstream SDK deprecation. T12 isolated-core tests use an independent expected graph for all 64 stage pairs, prerequisite and revision failures with complete rollback, foreign/empty/duplicate/tampered/unknown-confidence/future evidence, duplicate-lead races across real separate connections, append-only corrections, fresh authorization/role/channel/confirmation guards, and backup/restore persistence of stage/note/event history. Network/provider spies reject unexpected HTTP/CLI execution in service tests. Source provenance and evidence excerpt hashes share a reusable verifier with backup validation.
+
+Changed application files: new domain/crm.py, repositories/crm.py, services/crm.py; factored repositories/research_integrity.py excerpt validation for reuse. Added integration/test_manual_crm.py. Updated README (status/decision D16), CHANGELOG, docs 04/14/20/21, this record and DEVELOPMENT-HANDOFF; local AGENTS remains ignored/untracked. No SQL migration, dependency, bot registration, source request, version/tag or AI/hunting enablement. Remaining: reviewed contact capture, actor-bound Discord qualification/pipeline confirmations/rendering, CRM list/detail/notes adapters, reminders, exports and manual drafts. No full T12, P4a, P6 or live-readiness claim is made.

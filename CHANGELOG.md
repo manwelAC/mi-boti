@@ -4,6 +4,12 @@ Versions use MAJOR.MINOR.PATCH with annotated v tags. Releases before 1.0 are de
 
 ## Unreleased
 
+### Isolated manual CRM core
+
+- Record owner decision D16 permitting unreleased CRM development while the Phase 4a live-Discord gate stays open.
+- Add evidence-backed manual qualification, the documented pipeline graph, atomic due follow-up records, append-only note corrections and bounded reads behind a fresh-authorization service boundary.
+- Preserve business origin, immutable evidence, unique leads and zero AI-score/quota/outreach side effects. CRM commands remain unavailable pending UI and acceptance work.
+
 ### Research recovery validation
 
 - Verify application-level research provenance and excerpt hashes as part of basic backup validation.
