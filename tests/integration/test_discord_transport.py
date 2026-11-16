@@ -169,7 +169,7 @@ def test_campaign_commands_and_active_campaign_config_enforce_channel_and_versio
                 "campaign.create",
                 options_dict={"name": "QC Restaurants", "locality": "Quezon City"},
             )
-            assert "Created non-AI campaign" in create_ix.sent[-1]["content"]
+            assert "Saved **QC Restaurants**" in create_ix.sent[-1]["content"]
             camp_id = await db.call(lambda d: d.connection.execute("SELECT id FROM campaigns").fetchone()[0])
 
             # List campaigns.
@@ -260,7 +260,7 @@ def test_discover_command_enqueues_and_runs_background_worker_with_approved_sour
                 "discover",
                 options_dict={"campaign_id": camp_id, "limit": 10},
             )
-            assert "not enabled" in denied_ix.sent[-1]["content"]
+            assert "[sources.philippines_extract]" in denied_ix.sent[-1]["content"]
             assert await db.call(lambda d: d.connection.execute("SELECT count(*) FROM jobs").fetchone()[0]) == 0
 
             # With an enabled source adapter, /discover enqueues and runs in background.

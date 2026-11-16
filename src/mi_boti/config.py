@@ -58,7 +58,9 @@ class Settings:
         return {
             "configuration": "valid", "guild_configured": self.guild_id is not None,
             "owners_configured": bool(self.owner_ids), "token_configured": bool(self.discord_token),
-            "ai_enabled": False, "discovery_enabled": False, "hunting_enabled": False,
+            "ai_enabled": False,
+            "discovery_enabled": bool(self.sources.get("philippines_extract", {}).get("enabled", False)),
+            "hunting_enabled": False,
         }
 
     def hunt_limits(self, quota: int) -> dict[str, int]:
@@ -125,7 +127,7 @@ def _dynamic(section: dict, allowed: frozenset, *, source: bool) -> Mapping:
             raise ConfigurationError("Unknown provider/source configuration structure.")
         if type(options.get("enabled", False)) is not bool:
             raise ConfigurationError("Provider/source enabled must be boolean.")
-        if options.get("enabled"):
+        if options.get("enabled") and not (source and identifier == "philippines_extract"):
             raise ConfigurationError("Provider/source execution is not implemented or verified; keep enabled=false.")
         for key, value in options.items():
             if key == "enabled":
@@ -168,6 +170,15 @@ def _dynamic(section: dict, allowed: frozenset, *, source: bool) -> Mapping:
         if source and options.get("endpoint") and options.get("allowed_hosts"):
             if urlsplit(options["endpoint"]).hostname not in options["allowed_hosts"]:
                 raise ConfigurationError("Source endpoint is outside its host allowlist.")
+        if source and identifier == "philippines_extract" and options.get("enabled"):
+            from .discovery.philippines_extract import validate_extract_policy
+            from .domain.errors import AppError
+            try:
+                validate_extract_policy(options)
+            except (AppError, ValueError, TypeError, KeyError):
+                raise ConfigurationError("Philippines extract policy is incomplete, expired or invalid; keep enabled=false until corrected.") from None
+            if options.get("endpoint") != "https://download.geofabrik.de/asia/philippines-latest.osm.pbf" or options.get("allowed_hosts") != ["download.geofabrik.de"]:
+                raise ConfigurationError("Only the approved Geofabrik Philippines extract endpoint may be enabled.")
         result[identifier] = _freeze(options)
     return MappingProxyType(result)
 

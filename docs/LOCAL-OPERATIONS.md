@@ -82,3 +82,9 @@ For an already configured environment, `.venv\Scripts\python.exe -m mi_boti run`
 ```
 
 This reads local SQLite state only. It checks integrity, READY configuration, resource parents, canonical mapping coverage and persistent panel records without creating work, accessing credentials or contacting Discord. The bot may remain running. `full_phase2_accepted` deliberately remains false because this tool cannot verify live interactions or role/resource recovery. Review the [roadmap checkpoint](21-DEVELOPMENT-ROADMAP.md#phase-3-prerequisite-checkpoint--2026-11-14) for the manual gates.
+
+## Manual Philippines discovery — 2026-11-16
+
+Local extract discovery can now be explicitly enabled after preparation. Keep the example policy disabled by default. To prepare or refresh a snapshot, run `.venv\Scripts\python.exe -m mi_boti import-ph-extract`, then `.venv\Scripts\python.exe -m mi_boti verify-ph-extract`. These commands fetch/import only when invoked and never register businesses. The importer retains the previous generation if refresh fails. Snapshot data is not live website evidence; observation timestamps and partial-coverage limitations remain visible in persisted provenance.
+
+After successful verification, enable only `[sources.philippines_extract]` in ignored config.toml and restart the bot through the existing local launcher. The approved fixed endpoint and current policy are validated; public Overpass, arbitrary sources and all AI providers stay blocked. In lead-discovery, use `/discover campaign_id:<saved campaign UUID> limit:10`. Only that authorized command registers observations. The command first returns a job receipt, then a result summary. Use `/lead` for ambiguity reviews. No AI, qualification or hunting is started. Website collection is Phase 4a, not part of this snapshot lookup.

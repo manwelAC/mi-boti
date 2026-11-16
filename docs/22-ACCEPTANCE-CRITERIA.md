@@ -651,3 +651,26 @@ AGENTS.md
 ```
 
 The warnings are the existing discord.py positional-count deprecation, exercised by additional escaping tests. Live rendering and the campaign/discovery operator walkthrough remain pending; this is not full Phase 3 acceptance. Transient private confirmations do not survive restart and must be reopened. Changed files: discord_app/identity.py, bot.py, guide.py, tests/integration/test_identity_ui.py, README, CHANGELOG, docs 07/22 and DEVELOPMENT-HANDOFF.
+
+## Manual local-source enablement — 2026-11-16
+
+Owner authorized proceeding with snapshot discovery followed by Phase 4a live website research. Added the narrow config gate for the verified Philippines extract only; Overpass, unknown sources and AI remain blocked. Source policy validation checks safety bounds, current dates, approved endpoint/host and categories. Status/campaign replies now reflect enabled configuration instead of hardcoding discovery as unavailable. Example policy stays disabled by default; ignored local config now contains the reviewed policy enabled after successful import/verification. No application registry rows were inserted and no bot or Discord operation was launched by this work.
+
+Actual local import and independent verify-ph-extract output agreed:
+
+```text
+snapshot_id: c89257a5-e373-426f-9b2b-d86640775829
+snapshot_observed_at: 2026-11-15T21:22:28.000000Z
+pbf_sha256: c48acd3cc4c6a907b0d8f42fcfd1c942f3ad2825d1733d8cc229fd7a1c12a0aa
+snapshot_db_sha256: 89402014fadaf84ca7f8c48893a51201cd52aa7c2c372434feb1896059722466
+nodes_indexed: 22484; ways_indexed: 3562; relations_indexed: 48
+approximate_centroids: 3610; incomplete_geometry: 1; incomplete_snapshot: true
+skipped_invalid_tags: 0; truncated_by_cap: 0; unsupported_relations: 0
+verify-ph-extract: verified=true
+pytest -q: 518 passed, 108 warnings in 22.61s
+compileall -q src tests: exit code 0
+pip check: No broken requirements found.
+check-config: configuration=valid, discovery_enabled=true, ai_enabled=false, hunting_enabled=false
+```
+
+The shell check-config intentionally used no Discord identity/token; its guild/owner/token flags were false. The existing launcher supplies identity and cached credentials when the owner restarts it. No credentials were read. Warnings remain discord.py deprecations. Owner screenshots confirm private /lead empty queue and real campaign creation, not live link/separate confirmation or /discover results. Next live check: restart and run a bounded /discover for the saved campaign. Phase 3 remains unaccepted pending that walkthrough; no Phase 4a fetching is implemented or claimed here.

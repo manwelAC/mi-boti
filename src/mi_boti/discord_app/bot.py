@@ -233,11 +233,11 @@ class MiBotiClient(discord.Client):
                 await self.reply(interaction, self.status_text(command))
         await self._safe(interaction, action)
 
-    @staticmethod
-    def status_text(command):
+    def status_text(self, command):
         if command in {"usage", "connections"}:
             return "No AI provider is verified or enabled. AGY allowance compatibility remains blocked; no capacity estimate is invented. No CLI task or paid API has been called."
-        return "Hunting is disabled and no hunt worker is running. Discovery, research, scoring and CRM workflows are not implemented yet."
+        discovery = "Local snapshot discovery is enabled; use /discover in its assigned channel." if self.settings.safe_summary()["discovery_enabled"] else "Discovery is disabled until the approved local snapshot is prepared and enabled."
+        return "Hunting is disabled and no hunt worker is running. " + discovery + " Live website research, scoring and CRM workflows are not implemented yet."
 
     @staticmethod
     def _role_ids(value):
@@ -267,7 +267,7 @@ class MiBotiClient(discord.Client):
                 if key == "active_campaign_id":
                     target_id = None if value.strip().lower() == "none" else value.strip()
                     await self.database.call(lambda db: campaign_repository.set_active_campaign(db, actor.user_id, target_id))
-                    await self.reply(interaction, f"Active campaign updated to `{target_id or 'none'}`. Hunting and live discovery remain disabled.")
+                    await self.reply(interaction, f"Active campaign updated to `{target_id or 'none'}`. " + self.status_text("hunt.status"))
                     return
                 options = {"command_key": "config"}
                 if key == "operator_role_ids":
@@ -311,7 +311,7 @@ class MiBotiClient(discord.Client):
                         "service_description": opts.get("service_description") or "",
                     }
                     created = await self.database.call(lambda db: campaign_repository.create_campaign(db, actor.user_id, opts.get("name") or "", cfg))
-                    await self.reply(interaction, f"Created non-AI campaign `{created.id}` (**{discord.utils.escape_markdown(created.name)}**, v{created.current_version}). Live discovery and hunting remain gated.")
+                    await self.reply(interaction, f"Saved **{discord.utils.escape_markdown(created.name)}** (v{created.current_version}). Campaign ID: `{created.id}`. " + self.status_text("hunt.status"))
                     return
                 if command == "campaign.edit":
                     cfg = None
@@ -352,7 +352,7 @@ class MiBotiClient(discord.Client):
                 source_adapter = self.discovery_source_factory()
                 if source_adapter is None:
                     from ..discovery.overpass import SourcePolicyError
-                    raise SourcePolicyError("Discovery source is not enabled or policy-approved in config.toml (`[sources.overpass]`). No job was enqueued.")
+                    raise SourcePolicyError("Prepare and enable the approved local source in config.toml under [sources.philippines_extract]. No job was enqueued.")
                 target_campaign_id = opts.get("campaign_id")
                 if not target_campaign_id:
                     active_camp = await self.database.call(campaign_repository.get_active_campaign)

@@ -1,10 +1,31 @@
 import math
+from pathlib import Path
 
 import pytest
 
 from mi_boti.config import load_settings
 from mi_boti.domain.errors import ConfigurationError
 from mi_boti.domain.values import snowflake
+
+
+@pytest.mark.parametrize("change", ["valid", "missing", "expired", "endpoint", "host", "tags"])
+def test_only_reviewed_philippines_extract_can_be_enabled(configured, change):
+    env, path = configured
+    text = (Path(__file__).resolve().parents[2] / "config.example.toml").read_text(encoding="utf-8")
+    text = text.replace('[sources.philippines_extract]\nenabled = false', '[sources.philippines_extract]\nenabled = true')
+    if change == "missing": text = '[sources.philippines_extract]\nenabled=true\n'
+    if change == "expired": text = text.replace('2027-11-14', '2020-11-14')
+    if change == "endpoint": text = text.replace('philippines-latest.osm.pbf', 'other-latest.osm.pbf')
+    if change == "host": text = text.replace('download.geofabrik.de', 'other.example')
+    if change == "tags": text = text.replace('["cafe", "restaurant"]', '["hotel"]')
+    path.write_text(text, encoding="utf-8")
+    if change == "valid":
+        settings = load_settings(env)
+        assert settings.safe_summary()["discovery_enabled"] is True
+        assert settings.safe_summary()["ai_enabled"] is False
+        assert settings.sources["overpass"]["enabled"] is False
+    else:
+        with pytest.raises(ConfigurationError): load_settings(env)
 
 
 def test_offline_config_needs_no_discord_token_and_never_echoes_it(configured):
@@ -93,7 +114,7 @@ def test_disabled_dynamic_profiles_remain_immutable(configured):
         settings.sources["overpass"]["enabled"] = True
 
 
-def test_source_enablement_remains_rejected_while_d12_and_l03_are_open(configured):
+def test_public_overpass_enablement_remains_rejected(configured):
     env, path = configured
     path.write_text(
         '[sources.overpass]\n'

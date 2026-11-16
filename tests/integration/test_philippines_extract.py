@@ -629,7 +629,7 @@ def test_duplicate_only_exhausted_budgets_restart_and_no_startup_execution(datab
     assert verify_local_snapshot(data_dir).snapshot_id == manifest.snapshot_id
 
 
-def test_config_rejects_enabled_sources_while_production_discovery_remains_disabled(tmp_path):
+def test_config_enables_only_approved_local_extract(tmp_path):
     from mi_boti.config import load_settings
     from mi_boti.domain.errors import ConfigurationError
 
@@ -670,10 +670,11 @@ def test_config_rejects_enabled_sources_while_production_discovery_remains_disab
     assert summary["ai_enabled"] is False
     assert summary["hunting_enabled"] is False
 
-    # Rejects enabled = true for both philippines_extract and overpass while production discovery remains disabled
+    # Only the approved local extract can be enabled; no AI or HTTP source unlock.
     cfg_file.write_text(ph_toml.replace("enabled = false", "enabled = true"), encoding="utf-8")
-    with pytest.raises(ConfigurationError, match="keep enabled=false"):
-        load_settings(env)
+    enabled = load_settings(env)
+    assert enabled.safe_summary()["discovery_enabled"] is True
+    assert enabled.safe_summary()["ai_enabled"] is False
 
     cfg_file.write_text(
         ph_toml.replace("[sources.philippines_extract]", "[sources.overpass]").replace("enabled = false", "enabled = true"),
