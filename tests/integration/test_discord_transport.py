@@ -525,3 +525,65 @@ def test_guide_command_and_persistent_button_are_private_and_create_no_jobs(data
             await client.close()
             await db.close()
     asyncio.run(run())
+
+
+@pytest.mark.parametrize("case", ["owner", "ordinary-member", "missing-panel"])
+def test_explicit_guide_refresh_only_edits_existing_managed_message(database, configured, case):
+    async def run():
+        db, port, client, actor = await initialized(database, configured)
+        try:
+            current = await db.call(repository.state)
+            actor = replace(actor, channel_id=current["mappings"]["guide"])
+            if case == "ordinary-member":
+                actor = replace(actor, user_id="999", administrator=False, role_ids=frozenset())
+                port.members[actor.user_id] = actor
+            if case == "missing-panel": port.messages.clear()
+            calls = len(port.calls)
+            ix = Interaction(actor)
+            await client.operation(ix, "guide", action_name="refresh")
+            assert port.calls[calls:] == ([("panel.guide", "REFRESH")] if case == "owner" else [])
+            after = await db.call(repository.state)
+            assert after["panels"] == current["panels"]
+            assert after["resources"] == current["resources"]
+            assert not client.tasks
+        finally:
+            await client.close()
+            await db.close()
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("owned", [True, False])
+def test_guide_refresh_transport_checks_message_owner_and_never_sends(database, configured, owned):
+    from mi_boti.discord_app.transport import DiscordPort
+    from mi_boti.domain.discord import SetupError
+    async def run():
+        db, _, client, _ = await initialized(database, configured)
+        try:
+            current = await db.call(repository.state)
+            panel = current["panels"]["guide"]
+            channel_id = current["resources"]["guide"]["discord_id"]
+            edits = []
+            async def edit(**kwargs): edits.append(kwargs)
+            message = SimpleNamespace(author=SimpleNamespace(id=777 if owned else 888), edit=edit)
+            async def fetch_message(identifier):
+                assert identifier == int(panel["message_id"])
+                return message
+            async def fetch_channel(identifier):
+                assert identifier == int(channel_id)
+                return SimpleNamespace(fetch_message=fetch_message)  # No send/create capability.
+            proxy = SimpleNamespace(user=SimpleNamespace(id=777), settings=client.settings,
+                                    get_guild=lambda _: SimpleNamespace(fetch_channel=fetch_channel))
+            port = DiscordPort(proxy, client.settings)
+            if owned:
+                await port.refresh_guide(channel_id, panel, current)
+                assert len(edits) == 1
+                assert edits[0]["embed"].title == "Mi Boti · your tool guide"
+                assert not edits[0]["allowed_mentions"].everyone
+            else:
+                with pytest.raises(SetupError, match="not owned"):
+                    await port.refresh_guide(channel_id, panel, current)
+                assert not edits
+        finally:
+            await client.close()
+            await db.close()
+    asyncio.run(run())

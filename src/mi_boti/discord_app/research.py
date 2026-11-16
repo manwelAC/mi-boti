@@ -42,7 +42,8 @@ async def show_saved(client, interaction, *, business_id=None, job_id=None):
         embed.add_field(name="Progress", value="No evidence checkpoint yet. Reopen with /research action:status job_id:<UUID>.", inline=False)
     if job["error_code"]: embed.add_field(name="Stopped safely", value=clean(job["error_code"]) + ". Check access review, robots, website availability and current permissions before retrying.", inline=False)
     embed.set_footer(text="Literal public-page excerpts, not independent verification. No AI analysis, score, qualification or quota credit.")
-    await client.reply(interaction, embed=embed)
+    from .evidence import EvidencePicker
+    await client.reply(interaction, embed=embed, view=EvidencePicker(client, interaction.user.id, observations) if observations else None)
 
 
 class AccessConfirmation(discord.ui.View):
@@ -69,11 +70,15 @@ class AccessConfirmation(discord.ui.View):
 
 
 async def operation(client, interaction, *, business=None, refresh=False, analyze=False, action="collect", job_id=None,
-                    url=None, permission_url=None, rationale=None):
+                    url=None, permission_url=None, rationale=None, evidence_id=None, page=1):
     async def execute():
         actor, _ = await client._authorized(interaction, "research", admin=action in {"review", "revoke"})
         if analyze: raise ResearchError("AI analysis is disabled; retry with analyze:false. No provider was called.")
         business_id = record_id(business) if business else None
+        if action == "evidence":
+            from .evidence import show_evidence
+            await show_evidence(client, interaction, evidence_id, page)
+            return
         if action in {"review", "revoke", "collect"} and not business_id:
             raise ResearchError("Provide a business UUID from discovery results.")
         if action == "review":

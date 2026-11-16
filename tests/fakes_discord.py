@@ -65,3 +65,8 @@ class FakePort:
         if self.failure_key == "panel." + key:
             raise UncertainOperation("Panel message outcome is uncertain fixture.")
         return message_id
+
+    async def refresh_guide(self, channel_id, panel, current):
+        if (channel_id, panel["message_id"]) not in self.messages:
+            raise SetupError("Guide fixture is missing.")
+        self.calls.append(("panel.guide", "REFRESH"))

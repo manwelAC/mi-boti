@@ -252,10 +252,14 @@ class WebsiteCollector:
                 url = next_url
                 continue
             text, links = extract(raw, url, headers.get("content-type", ""))
-            text = text[:min(20000, self.limits.get("research.max_text_chars", 20000))]
+            text_limit = min(20000, self.limits.get("research.max_text_chars", 20000))
+            text = text[:text_limit]
             if not text: raise ResearchError("Website contained no usable public text.")
+            limitations = ("Public page excerpt; not independently verified and not proof of internal software.",)
+            if len(text) >= text_limit:
+                limitations += (f"The saved excerpt is capped at {text_limit} characters; additional page text may be omitted.",)
             return PageObservation(original, url, utc_now(), text, hashlib.sha256(text.encode()).hexdigest(),
-                                   review.policy_version, ("Public page excerpt; not independently verified and not proof of internal software.",)), links
+                                   review.policy_version, limitations), links
 
     async def collect(self, url, review, *, max_pages=5, authorize=None):
         token = self.dispatch_check.set(authorize)

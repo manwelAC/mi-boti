@@ -101,3 +101,9 @@ Use business-research. Research is provider-free and never qualifies a lead or s
 4. Reopen with `/research action:status job_id:<UUID>`. Use `action:cancel job_id:<UUID>` to stop work. Administrators can `action:revoke business:<UUID>` to remove current access. Evidence already committed remains immutable.
 
 Configure research.user_agent locally with a descriptive contact reference; the ignored deployment config now uses the Mi Boti repository URL. No bot token is needed for local HTTP configuration. Restart the existing bot to synchronize the new /research options. No second bot or real-server setup was launched by development. Live Discord research remains a required owner check.
+
+### Refreshing help and reading saved evidence
+
+After restarting for the latest commands, run `/guide refresh:true` in guide as owner/administrator to update the old published guide card. This edits the existing bot-owned card only; it is not a setup operation. Missing cards still use reviewed /setup recovery.
+
+Use the dropdown on a research result to read a full stored excerpt, or `/research action:evidence evidence_id:<UUID> page:1`. Previous/Next controls read saved pages without another website request. Full source links, timestamps and limitations remain visible. The controls expire after ten minutes; reopen by evidence ID after expiry or restart.

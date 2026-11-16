@@ -181,6 +181,18 @@ class DiscordPort:
         except SetupError:
             return False
 
+    async def refresh_guide(self, channel_id, panel, current):
+        from .guide import build_guide_embed
+        from .views import PanelView
+        channel = await self.api(self.guild.fetch_channel(int(channel_id)))
+        message = await self.api(channel.fetch_message(int(panel["message_id"])))
+        if message.author.id != self.client.user.id:
+            raise SetupError("The saved guide is not owned by this bot. Use /setup for reviewed recovery.")
+        embed = build_guide_embed(current, discovery_enabled=self.settings.safe_summary()["discovery_enabled"])
+        embed.set_footer(text=f"Mi Boti panel {panel['id']} · revision {panel['revision']}")
+        await self.api(message.edit(embed=embed, view=PanelView(self.client, "guide", panel["id"], panel["revision"], current),
+                                    allowed_mentions=discord.AllowedMentions.none()), mutation=True)
+
     async def publish_panel(self, key, channel_id, panel_id, revision, message_id, current):
         from .views import PanelView
         channel = await self.api(self.guild.fetch_channel(int(channel_id)))

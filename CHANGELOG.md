@@ -4,6 +4,12 @@ Versions use MAJOR.MINOR.PATCH with annotated v tags. Releases before 1.0 are de
 
 ## Unreleased
 
+### Guide maintenance and evidence reading
+
+- Add administrator-only /guide refresh:true to edit the existing managed guide card without provisioning or creating messages.
+- Add actor-bound saved-evidence selection and full-excerpt paging through /research action:evidence; preserve source metadata and immutable text without a new fetch.
+- Disclose extraction caps explicitly, and verify real permitted website collection/refresh in isolated fixtures.
+
 ### Non-AI research workflow
 
 - Connect /research to durable background jobs and immutable evidence cards, with explicit refresh, saved status, cancellation and restart interruption.

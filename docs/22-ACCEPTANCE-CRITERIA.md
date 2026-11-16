@@ -773,3 +773,57 @@ git check-ignore AGENTS.md: AGENTS.md
 The final collector guard tests additionally deny access before DNS and again after DNS, with zero HTTP dispatch. The final executed full-suite result is 572 passed, 261 warnings in 48.82s.
 
 Owner clarified that no sample website is available. A read-only web lookup identified [Max's official brand site](https://maxschicken.com/) as a candidate corresponding to the discovered brand name. This does not establish branch-specific identity or automated-access permission. The browsing tool could not verify its robots URL, and no adequate same-host automation permission reference was established, so no production access review or business collection was approved. Do not treat this lookup as Mi Boti research evidence or a passed business-site live check.
+
+## Autonomous live-source testing and continued development — 2026-11-16
+
+Owner authorized testing without requiring them to provide a sample, then continuing development. Reviewed [Scrape This Site's official FAQ](https://www.scrapethissite.com/faq/), which expressly permits automated access with an identifying user-agent, robots compliance and a maximum of one request/second. Mi Boti uses at least two seconds between host request starts. Its public training-service homepage was used for isolated source validation, not a Philippine prospect or owner-approved production record. No bot token, production access policy or production research data was used/changed. Real Discord delivery was not exercised by this test.
+
+Actual public sandbox smoke checks:
+
+```text
+https://www.scrapethissite.com/pages/simple/
+SUCCEEDED; requests=2; pages=1
+excerpt_sha256=a1b859f8b508651aa89ca5243f059481b06f32ea8b73aa39fddff3c3c7f7577a
+https://books.toscrape.com/
+FAILED; requests=1; pages=0
+Website or robots policy was unavailable; no access bypass was attempted.
+```
+
+The first isolated full worker/evidence/viewer fixture used the live countries sandbox page, stored 18,262 characters including the source-assertion label, and rendered the saved excerpt across 16 evidence pages. It recorded one research run/evidence and zero findings/scores/leads/credits. Fixture: .pytest_cache/live-research/fa329e6ff4b44ebf9c643ed1b28d0725. No production records were added.
+
+A second full worker test collected the permitted training-service homepage twice, reusing the shared collector/robots cache and preserving the original evidence unchanged. Actual output:
+
+```text
+source_url=https://www.scrapethissite.com/
+permission_reference=https://www.scrapethissite.com/faq/
+run 1: SUCCEEDED; requests=2; evidence=5f69d8d2-83d8-48ef-8247-88dee5502a36
+observed_at=2026-11-16T08:49:58.133135Z
+run 2: SUCCEEDED; requests=1; evidence=f9585490-e4fa-4205-b8a5-02de1d6128c3
+observed_at=2026-11-16T08:49:59.645131Z
+original_evidence_unchanged=true
+research_runs=2; evidence=2; findings=0; scores=0; leads=0; hunt_credits=0
+production_data_changed=false
+Discord authorization=simulated; real Discord delivery not exercised
+fixture=.pytest_cache/live-research/c5518c2d3276499780bbbcaec1f6aff9
+report=LIVE-RESEARCH-REPORT.md
+```
+
+Continued development after live collection: /guide refresh:true now permits owner/admin to edit only the already managed bot-owned saved guide message. It never creates resources/messages/jobs, preserves IDs/revisions and fails closed for missing/unowned targets. Default guide reads remain private. Research result dropdowns and /research action:evidence evidence_id:<UUID> page:<int> now expose complete immutable saved excerpts in 1,200-character pages with source, timestamp, policy version, confidence and limitations. Actor/expiry/member/channel checks repeat on every control; reading never refetches or enqueues work. Extraction now records when the configured text cap may omit further source content.
+
+Executed checks:
+
+```text
+.venv\Scripts\python.exe -m pytest -q
+584 passed, 341 warnings in 51.03s
+After final policy-version/source-reference card-label refinement:
+.venv\Scripts\python.exe -m pytest -q tests/integration/test_evidence_reader.py tests/integration/test_discord_transport.py tests/unit/test_operator_guide.py
+35 passed, 143 warnings in 5.03s
+.venv\Scripts\python.exe -m compileall -q src tests
+Exit code 0
+.venv\Scripts\python.exe -m pip check
+No broken requirements found.
+git diff --check
+Exit code 0 (line-ending notices only)
+```
+
+Warnings remain discord.py escaping deprecations. New tests reconstruct the full saved text across pages, validate embed limits/mention escaping, deny stale/foreign/wrong-channel/revoked evidence controls, exercise evidence selection, and verify guide refresh does not create anything and refuses another author's message. Changed application files: discord_app/bot.py, guide.py, research.py, transport.py, new evidence.py and research/collector.py. Tests: fakes_discord.py, integration/test_discord_transport.py and new integration/test_evidence_reader.py. Updated README, CHANGELOG, docs 07/09/16/LOCAL-OPERATIONS, this record and DEVELOPMENT-HANDOFF. No migration, dependency, application-version bump or AI enablement. Real successful /research delivery and guide-refresh rendering in Discord remain pending; P4a is not declared complete and no real prospect is qualified by these tests.

@@ -249,9 +249,20 @@ class MiBotiClient(discord.Client):
 
     async def operation(self, interaction, command, *, action_name=None, key=None, value=None, options_dict=None):
         async def action():
-            actor, current = await self._authorized(interaction, command, admin=command == "connections" and action_name == "verify")
+            actor, current = await self._authorized(interaction, command, admin=(command == "connections" and action_name == "verify") or (command == "guide" and action_name == "refresh"))
             if command == "guide":
                 from .guide import build_guide_embed
+                if action_name == "refresh":
+                    panel = current["panels"]["guide"]
+                    resource = next(r for r in current["resources"].values() if r["id"] == panel["resource_id"])
+                    # Only edit the already verified, managed message. No create path.
+                    if not panel["message_id"]:
+                        raise SetupError("The guide panel is missing; preview /setup for approved recovery.")
+                    await self.port.refresh_guide(resource["discord_id"], panel, current)
+                    latest = await self.database.call(repository.state)
+                    if latest["panels"]["guide"] != panel:
+                        raise SetupError("Guide configuration changed during refresh; retry /guide refresh:true.")
+                    await self.database.call(lambda db: repository.audit(db.connection, actor.user_id, "guide.content_refreshed", "SUCCESS", panel["id"]))
                 await self.reply(interaction, embed=build_guide_embed(current, discovery_enabled=self.settings.safe_summary()["discovery_enabled"]))
                 return
             if command == "config":
@@ -459,8 +470,8 @@ class MiBotiClient(discord.Client):
         async def config(interaction: discord.Interaction, action: Literal["view", "set"], key: str | None = None, value: str | None = None):
             await self.operation(interaction, "config", action_name=action, key=key, value=value)
         self.tree.add_command(app_commands.Command(name="config", description="Inspect settings or preview approved mapping/role changes", callback=config), guild=guild)
-        async def guide(interaction: discord.Interaction):
-            await self.operation(interaction, "guide")
+        async def guide(interaction: discord.Interaction, refresh: bool = False):
+            await self.operation(interaction, "guide", action_name="refresh" if refresh else None)
         self.tree.add_command(app_commands.Command(name="guide", description="Learn each tool, its channel, usage and availability", callback=guide), guild=guild)
         async def connections(interaction: discord.Interaction, action: Literal["status", "verify"] = "status"):
             await self.operation(interaction, "connections", action_name=action)
@@ -495,11 +506,12 @@ class MiBotiClient(discord.Client):
             await self.operation(interaction, "discover", options_dict={"campaign_id": campaign_id, "limit": limit, "job_id": job_id, "page": page})
         self.tree.add_command(app_commands.Command(name="discover", description="Run bounded non-AI business discovery for an approved campaign", callback=discover), guild=guild)
         async def research(interaction: discord.Interaction, business: str | None = None, refresh: bool = False, analyze: bool = False,
-                           action: Literal["collect", "status", "cancel", "review", "revoke"] = "collect", job_id: str | None = None,
-                           url: str | None = None, permission_url: str | None = None, rationale: str | None = None):
+                           action: Literal["collect", "status", "cancel", "review", "revoke", "evidence"] = "collect", job_id: str | None = None,
+                           url: str | None = None, permission_url: str | None = None, rationale: str | None = None,
+                           evidence_id: str | None = None, page: int = 1):
             from .research import operation
             await operation(self, interaction, business=business, refresh=refresh, analyze=analyze, action=action,
-                            job_id=job_id, url=url, permission_url=permission_url, rationale=rationale)
+                            job_id=job_id, url=url, permission_url=permission_url, rationale=rationale, evidence_id=evidence_id, page=page)
         self.tree.add_command(app_commands.Command(name="research", description="Collect reviewed public website evidence without AI, or inspect saved research", callback=research), guild=guild)
         async def lead(interaction: discord.Interaction, id: str | None = None, page: int = 1,
                        action: Literal["inspect", "link", "separate"] = "inspect",
