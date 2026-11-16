@@ -71,9 +71,9 @@ class ResultsView(discord.ui.View):
                     embed = discord.Embed(title=clean(obs.get("name", "Unnamed"), 150), description=f"{row['state']} · Business `{row['business_id'] or 'unresolved'}`")
                     for name, value in (("Source reference (untrusted)", obs.get("source_url", "Not supplied")),
                                         ("Observed", obs.get("observed_at", "Unknown")),
-                                        ("Address", json.dumps(obs.get("address", {}), ensure_ascii=False)),
+                                        ("Address", ", ".join(str(v) for v in obs.get("address", {}).values() if v) or "Not provided by this source"),
                                         ("Attribution", obs.get("attribution", "Not supplied")),
-                                        ("Limitations", json.dumps(obs.get("limitations", []), ensure_ascii=False))):
+                                        ("Limitations", "\n".join(str(v) for v in obs.get("limitations", [])) or "No additional limitations recorded")):
                         embed.add_field(name=name, value=clean(value, 900) or "Not supplied", inline=False)
                     embed.set_footer(text="Source assertions only. For identity review, use /lead in lead-pipeline. No qualification or quota credit.")
                     await client.reply(interaction, embed=embed)

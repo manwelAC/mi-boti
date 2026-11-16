@@ -4,6 +4,11 @@ Versions use MAJOR.MINOR.PATCH with annotated v tags. Releases before 1.0 are de
 
 ## Unreleased
 
+### Staged research foundation
+
+- Replace empty discovery addresses and raw limitation arrays with readable text.
+- Add a provider-free website collection engine and immutable research/evidence repository with safety and provenance tests. This is not yet wired into /research; live website collection remains unavailable pending job/policy integration and live validation.
+
 ### Discovery results browsing
 
 - Add private paginated saved-observation cards and source-detail selection after discovery completion. Reopen historical results with /discover job_id without running another search. Recheck authorization on every component; identity mutations remain in lead-pipeline.

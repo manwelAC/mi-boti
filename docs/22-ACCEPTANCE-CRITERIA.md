@@ -695,3 +695,24 @@ Exit code 0 (line-ending notices only)
 ```
 
 Warnings are existing discord.py positional-count deprecations exercised by additional escaping. Changed: discord_app/discovery_results.py, bot.py, guide.py; tests/integration/test_discovery_results_ui.py; README, CHANGELOG, docs 07/22/LOCAL-OPERATIONS and DEVELOPMENT-HANDOFF. Live result-card rendering after restart remains pending. Website research/qualification/AI/hunting are not implemented or enabled by this increment.
+
+## Phase 4a collection/evidence foundation — 2026-11-16
+
+Owner screenshots verify saved discovery-list and detail rendering. Corrected detail presentation: empty addresses now say Not provided by this source; limitation strings render as prose instead of JSON arrays. This does not infer missing business data.
+
+Added research/collector.py and repositories/research.py with independent unit/integration tests. The collector requires a current named exact-host access-review input before any request, then validates robots, pins public DNS results for actual HTTPX destinations with Host/SNI retained, serializes host starts at least two seconds apart, bounds redirects/body/text/pages/requests/time, rejects unsupported compression/MIME, extracts literal public text, and preserves source/final URL, timestamps, policy version and hashes. DNS admission remains reserved until a cancelled resolver actually finishes. Critical URL/DNS/redirect violations fail the collection. The evidence repository requires an owned uncancelled manual RESEARCH lease and explicit refresh/analyze:false, blocks unresolved identity, validates excerpt hashes/times and writes new immutable research/evidence rows. It never inserts findings, scores, leads or quota credits.
+
+Executed checks:
+
+```text
+Focused collector tests: 26 passed in 18.43s
+Full suite: 553 passed, 174 warnings in 38.90s
+.venv\Scripts\python.exe -m compileall -q src tests
+Exit code 0
+.venv\Scripts\python.exe -m pip check
+No broken requirements found.
+git diff --check
+Exit code 0 (line-ending notices only)
+```
+
+The warnings remain existing discord.py deprecations. Tests use simulated DNS/HTTP; no business website was fetched and no live OS/TLS collector verification was claimed. Provider-free architecture and zero score/lead/quota writes are verified at the module/repository boundary; full runtime provider-spy coverage is still pending integration. No schema change or new dependency. Research stays unavailable from Discord: durable worker/admission/cancellation/recovery, persisted reviewed-site policies, configuration-driven runtime limits, UI and live research checks are pending. This increment does not complete P4a or waive remaining P3 live acceptance. New modules are staged library code, not a production-ready fetch release.
